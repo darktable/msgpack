@@ -8,8 +8,8 @@
     <ProjectGuid>{9368F537-D796-4525-99C1-5F302D9350B1}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>msgpack_src</RootNamespace>
-    <AssemblyName>msgpack_src</AssemblyName>
+    <RootNamespace>MsgPack</RootNamespace>
+    <AssemblyName>MsgPack</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -34,7 +34,13 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BooleanType.cs" />
+    <Compile Include="IMessagePackable.cs" />
+    <Compile Include="MessagePackObject.cs" />
+    <Compile Include="MessageTypeException.cs" />
+    <Compile Include="Packer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Unpacker.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
