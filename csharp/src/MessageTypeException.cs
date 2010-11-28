@@ -6,6 +6,11 @@ public class MessageTypeException: Exception
     {
     }
 
+    public MessageTypeException(Exception innerException)
+        : base("type error", innerException)
+    {
+    }
+
     public MessageTypeException(string message) : base(message)
     {
     }

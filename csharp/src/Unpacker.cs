@@ -3,19 +3,18 @@ using System.IO;
 
 public class Unpacker
 {
-    private readonly Stream stream;
-    private readonly BufferedUnpackerImpl impl;
-
     private const int DefaultBufferSize = 32*1024;
+    private readonly BufferedUnpackerImpl impl;
+    private readonly Stream stream;
 
-	protected int parsed;
-	protected int bufferReserveSize;
+    protected int bufferReserveSize;
+    protected int parsed;
 
-    public Unpacker() :this(DefaultBufferSize)
+    public Unpacker() : this(DefaultBufferSize)
     {
     }
 
-    public Unpacker(int bufferReserveSize): this(null, bufferReserveSize)
+    public Unpacker(int bufferReserveSize) : this(null, bufferReserveSize)
     {
     }
 
@@ -27,7 +26,7 @@ public class Unpacker
     public Unpacker(Stream stream, int bufferReserveSize)
     {
         parsed = 0;
-        this.bufferReserveSize = bufferReserveSize / 2;
+        this.bufferReserveSize = bufferReserveSize/2;
         this.stream = stream;
         impl = new BufferedUnpackerImpl(
             () =>
@@ -52,20 +51,25 @@ public class Unpacker
         return impl.UnpackBool();
     }
 
-    public object UnpackNull() 
+    public object UnpackNull()
     {
-		return impl.UnpackNull();
-	}
+        return impl.UnpackNull();
+    }
 
     public float UnpackFloat()
     {
-		return impl.UnpackFloat();
-	}
+        return impl.UnpackFloat();
+    }
 
-	public double UnpackDouble()
+    public double UnpackDouble()
     {
-		return impl.UnpackDouble();
-	}
+        return impl.UnpackDouble();
+    }
+
+    public string UnpackString()
+    {
+        return impl.UnpackString();
+    }
 
     public void BufferConsumed(int size)
     {
@@ -93,7 +97,7 @@ public class Unpacker
             return;
         }
 
-        int nextSize = impl.buffer.Length * 2;
+        int nextSize = impl.buffer.Length*2;
         int notParsed = impl.filled - impl.offset;
         while (nextSize < require + notParsed)
         {
