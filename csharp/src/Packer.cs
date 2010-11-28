@@ -2,22 +2,12 @@
 
 public class Packer
 {
-    private readonly Stream outputStream;
+    private readonly Stream stream;
 
-    public Packer(Stream outputStream)
+    public Packer(Stream stream)
     {
-        this.outputStream = outputStream;
+        this.stream = stream;
     }
-
-/*    public Packer Pack(int val)
-    {
-        return PackInt(val);
-    }
-
-    public Packer PackInt(int d)
-    {
-        return this;
-    }*/
 
     public Packer Pack(bool val)
     {
@@ -26,18 +16,24 @@ public class Packer
 
 	public Packer PackTrue()  
     {
-        outputStream.WriteByte(0xc3);
+        stream.WriteByte(0xc3);
 		return this;
 	}
 
 	public Packer PackFalse()  
     {
-        outputStream.WriteByte(0xc2);
+        stream.WriteByte(0xc2);
 		return this;
 	}
 
 	public Packer PackBool(bool d)  
     {
 		return d ? PackTrue() : PackFalse();
+	}
+
+    public Packer PackNull() 
+    {
+        stream.WriteByte(0xc0);
+		return this;
 	}
 }

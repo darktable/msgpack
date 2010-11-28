@@ -30,6 +30,18 @@ public class BufferedUnpackerImpl: UnpackerImpl
 		}
 	}
 
+    internal object UnpackNull()
+    {
+		More(1);
+		int b = buffer[offset] & 0xff;
+        if (b != 0xc0) // nil
+        {  
+			throw new MessageTypeException();
+		}
+		Advance(1);
+		return null;
+	}
+
     private void Advance(int length) {
 		offset += length;
 	}

@@ -52,6 +52,12 @@ public class Unpacker
         return impl.UnpackBool();
     }
 
+    public object UnpackNull() 
+    {
+		return impl.UnpackNull();
+	}
+
+
     public void BufferConsumed(int size)
     {
         impl.filled += size;
