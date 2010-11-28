@@ -2,11 +2,11 @@
 
 public class Packer
 {
-    private readonly Stream stream;
+    private readonly BinaryWriter writer;
 
     public Packer(Stream stream)
     {
-        this.stream = stream;
+        writer = new BinaryWriter(stream);
     }
 
     public Packer Pack(bool val)
@@ -16,13 +16,13 @@ public class Packer
 
 	public Packer PackTrue()  
     {
-        stream.WriteByte(0xc3);
+        writer.Write((byte)0xc3);
 		return this;
 	}
 
 	public Packer PackFalse()  
     {
-        stream.WriteByte(0xc2);
+        writer.Write((byte)0xc2);
 		return this;
 	}
 
@@ -33,7 +33,21 @@ public class Packer
 
     public Packer PackNull() 
     {
-        stream.WriteByte(0xc0);
+        writer.Write((byte)0xc0);
+		return this;
+	}
+
+    public Packer PackFloat(float f)
+    {
+        writer.Write((byte) 0xca);
+        writer.Write(f);
+		return this;
+    }
+
+    public Packer PackDouble(double d)
+    {
+        writer.Write((byte) 0xcb);
+        writer.Write(d);
 		return this;
 	}
 }

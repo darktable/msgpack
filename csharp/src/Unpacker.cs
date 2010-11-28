@@ -57,6 +57,15 @@ public class Unpacker
 		return impl.UnpackNull();
 	}
 
+    public float UnpackFloat()
+    {
+		return impl.UnpackFloat();
+	}
+
+	public double UnpackDouble()
+    {
+		return impl.UnpackDouble();
+	}
 
     public void BufferConsumed(int size)
     {

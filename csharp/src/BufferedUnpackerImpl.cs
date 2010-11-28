@@ -42,6 +42,49 @@ public class BufferedUnpackerImpl: UnpackerImpl
 		return null;
 	}
 
+    internal float UnpackFloat()
+    {
+        More(1);
+        int b = buffer[offset];
+        switch (b & 0xff)
+        {
+            case 0xca: // float
+                More(5);
+                var f = BitConverter.ToSingle(buffer, offset + 1);
+                Advance(5);
+                return f;
+            case 0xcb: // double
+                More(9);
+                var d = BitConverter.ToDouble(buffer, offset + 1);
+                Advance(9);
+                // FIXME overflow check
+                return (float) d;
+            default:
+                throw new MessageTypeException();
+        }
+    }
+
+    internal double UnpackDouble()
+    {
+        More(1);
+        int b = buffer[offset];
+        switch (b & 0xff)
+        {
+            case 0xca: // float
+                More(5);
+                var f = BitConverter.ToSingle(buffer, offset + 1);
+                Advance(5);
+                return f;
+            case 0xcb: // double
+                More(9);
+                var d = BitConverter.ToDouble(buffer, offset + 1);
+                Advance(9);
+                return d;
+            default:
+                throw new MessageTypeException();
+        }
+    }
+
     private void Advance(int length) {
 		offset += length;
 	}
