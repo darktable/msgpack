@@ -131,7 +131,7 @@ namespace MsgPack.Test
             TestULong(uint.MaxValue);
             TestULong(long.MaxValue);
             TestULong(ulong.MaxValue);
-            Repeat(1000, rand => TestULong(NextUlong(rand)));
+            Repeat(1000, rand => TestULong(NextULong(rand)));
         }
 
         private static void TestULong(ulong val)
@@ -139,14 +139,52 @@ namespace MsgPack.Test
             TestValue(
                 val,
                 (packer, v) => packer.PackULong(v),
-                unpacker => unpacker.UnpackUlong());
+                unpacker => unpacker.UnpackULong());
         }
 
-        public static ulong NextUlong(Random rand)
+        public static ulong NextULong(Random rand)
         {
             var buffer = new byte[sizeof(ulong)];
             rand.NextBytes(buffer);
             return BitConverter.ToUInt64(buffer, 0);
+        }
+
+        [Test]
+        public void TestLong()
+        {
+            TestLong(0);
+            TestLong(1);
+            TestLong(-1);
+            TestLong(byte.MaxValue);
+            TestLong(byte.MinValue);
+            TestLong(sbyte.MaxValue);
+            TestLong(sbyte.MinValue);
+            TestLong(ushort.MaxValue);
+            TestLong(ushort.MinValue);
+            TestLong(short.MaxValue);
+            TestLong(short.MinValue);
+            TestLong(int.MaxValue);
+            TestLong(int.MinValue);
+            TestLong(uint.MaxValue);
+            TestLong(uint.MinValue);
+            TestLong(long.MaxValue);
+            TestLong(long.MinValue);
+            Repeat(1000, rand => TestLong(NextLong(rand)));
+        }
+
+        private static void TestLong(long val)
+        {
+            TestValue(
+                val,
+                (packer, v) => packer.PackLong(v),
+                unpacker => unpacker.UnpackLong());
+        }
+
+        public static long NextLong(Random rand)
+        {
+            var buffer = new byte[sizeof(long)];
+            rand.NextBytes(buffer);
+            return BitConverter.ToInt64(buffer, 0);
         }
 
         private static void TestValue<T>(T val, Action<Packer, T> pack, Func<Unpacker, T> unpack)

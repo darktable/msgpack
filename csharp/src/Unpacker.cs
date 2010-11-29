@@ -71,9 +71,14 @@ public class Unpacker
         return impl.UnpackString();
     }
 
-    public ulong UnpackUlong()
+    public ulong UnpackULong()
     {
-        return impl.UnpackUlong();
+        return impl.UnpackULong();
+    }
+
+    public long UnpackLong()
+    {
+        return impl.UnpackLong();
     }
 
     public void BufferConsumed(int size)

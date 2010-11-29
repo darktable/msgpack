@@ -4,12 +4,15 @@ using System.Text;
 
 public class Packer
 {
-    private const uint MaxPositiveFixnum = (1 << 7) - 1;
+    private const byte MaxFixnum = (1 << 7) - 1;
+    private const sbyte MinFixnum = -(1 << 5);
     private const uint MaxUInt8 = (1 << 8) - 1;
     private const ulong MaxUInt16 = (1L << 16) - 1;
     private const ulong MaxUInt32 = (1L << 32) - 1;
     private const int MaxFixRawLength = 31;
     private const int MaxRaw16Length = 65535;
+    private const long MinInt32 = -(1L<<31);
+    private const int MinInt8 = -(1<<7);
 
     private readonly BinaryWriter writer;
 
@@ -105,9 +108,9 @@ public class Packer
 
     public Packer PackULong(ulong d)
     {
-        if (d <= MaxPositiveFixnum) 
+        if (d <= MaxFixnum) 
         {
-            PackPositiveFixnumExact(d);
+            PackFixnumExact((sbyte)d);
         }
         else
         {
@@ -115,18 +118,18 @@ public class Packer
             {
                 if (d <= MaxUInt8)
                 {
-                    PackUInt8Exact(d);
+                    PackUInt8Exact((byte)d);
                 }
                 else
                 {
-                    PackUInt16Exact(d);
+                    PackUInt16Exact((ushort)d);
                 }
             }
             else
             {
                 if (d <= MaxUInt32)
                 {
-                    PackUInt32Exact(d);
+                    PackUInt32Exact((uint)d);
                 }
                 else
                 {
@@ -138,27 +141,89 @@ public class Packer
         return this;
     }
 
-    private void PackPositiveFixnumExact(ulong d)
+    public Packer PackLong(long d)
     {
-        writer.Write((byte) d);
+        if (d > 0)
+        {
+            PackULong((ulong)d);
+        }
+        else if (d >= MinFixnum)
+        {
+            PackFixnumExact((sbyte) d);
+        }
+        else
+        {
+            if (d < -(1L << 15))
+            {
+                if (d < MinInt32)
+                {
+                    PackInt64Exact(d);
+                }
+                else
+                {
+                    PackInt32Exact((int) d);
+                }
+            }
+            else
+            {
+                if (d < MinInt8)
+                {
+                    PackInt16Exact((short) d);
+                }
+                else
+                {
+                    PackInt8Exact((sbyte) d);
+                }
+            }
+        }
+        return this;
     }
 
-    private void PackUInt8Exact(ulong d)
+    private void PackInt8Exact(sbyte d)
+    {
+        writer.Write((byte)0xd0);
+        writer.Write(d);
+    }
+
+    private void PackInt16Exact(short d)
+    {
+        writer.Write((byte)0xd1);
+        writer.Write(d);
+    }
+
+    private void PackInt32Exact(int d)
+    {
+        writer.Write((byte)0xd2);
+        writer.Write(d);
+    }
+
+    private void PackInt64Exact(long d)
+    {
+        writer.Write((byte)0xd3);
+        writer.Write(d);
+    }
+
+    private void PackFixnumExact(sbyte d)
+    {
+        writer.Write(d);
+    }
+
+    private void PackUInt8Exact(byte d)
     {
         writer.Write((byte)0xcc);
-        writer.Write((byte)d);
+        writer.Write(d);
     }
 
-    private void PackUInt16Exact(ulong d)
+    private void PackUInt16Exact(ushort d)
     {
         writer.Write((byte)0xcd);
-        writer.Write((UInt16)d);
+        writer.Write(d);
     }
 
-    private void PackUInt32Exact(ulong d)
+    private void PackUInt32Exact(uint d)
     {
         writer.Write((byte)0xce);
-        writer.Write((UInt32)d);
+        writer.Write(d);
     }
 
     private void PackUInt64Exact(ulong d)

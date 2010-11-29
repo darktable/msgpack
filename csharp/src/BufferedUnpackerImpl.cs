@@ -145,7 +145,7 @@ public class BufferedUnpackerImpl : UnpackerImpl
         return bytes;
     }
 
-    internal ulong UnpackUlong()
+    internal ulong UnpackULong()
     {
         More(1);
         byte b = buffer[offset];
@@ -169,7 +169,73 @@ public class BufferedUnpackerImpl : UnpackerImpl
         }
     }
 
-    private ulong UnpackUInt8Exact()
+    internal long UnpackLong()
+    {
+        More(1);
+        byte b = buffer[offset];
+        if ((b & 0x80) == 0) // positive fixnum
+        { 
+            Advance(1);
+            return b;
+        }
+        if ((b & 0xe0) == 0xe0) // negative fixnum
+        { 
+            Advance(1);
+            return (sbyte)b;
+        }
+        switch (b & 0xff)
+        {
+            case 0xcc:
+                return UnpackUInt8Exact();
+            case 0xcd:
+                return UnpackUInt16Exact();
+            case 0xce:
+                return UnpackUInt32Exact();
+            case 0xcf:
+                // FIXME overflow check
+                return (long)UnpackUInt64Exact();
+            case 0xd0:
+                return UnpackInt8Exact();
+            case 0xd1: 
+                return UnpackInt16Exact();
+            case 0xd2:
+                return UnpackInt32Exact();
+            case 0xd3:
+                return UnpackInt64Exact();
+            default:
+                throw new MessageTypeException();
+        }
+    }
+
+    private sbyte UnpackInt8Exact()
+    {
+        More(2);
+        Advance(2);
+        return (sbyte) buffer[offset - 1];
+    }
+
+    private short UnpackInt16Exact()
+    {
+        More(3);
+        Advance(3);
+        return BitConverter.ToInt16(buffer, offset - 2);
+    }
+
+    private int UnpackInt32Exact()
+    {
+        More(5);
+        Advance(5);
+        return BitConverter.ToInt32(buffer, offset - 4);
+    }
+
+    private long UnpackInt64Exact()
+    {
+        More(9);
+        Advance(9);
+        return BitConverter.ToInt64(buffer, offset - 8);
+    }
+
+    private byte UnpackUInt8Exact()
     {
         More(2);
         Advance(2);
