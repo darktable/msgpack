@@ -54,6 +54,11 @@ public class Packer
 
     public Packer PackString(string s)
     {
+        if (s == null)
+        {
+            return PackNull();
+        }
+
         byte[] b = Encoding.UTF8.GetBytes(s);
         return PackRaw(b.Length).PackRawBody(b);
     }

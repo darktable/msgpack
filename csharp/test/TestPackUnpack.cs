@@ -96,6 +96,12 @@ namespace MsgPack.Test
             Repeat(5, rand => TestString(GetRandomString(rand, (1 << 25), (1 << 25) + 100)));
         }
 
+        [Test]
+        public void TestNullString()
+        {
+            TestString(null);
+        }
+
         private static void TestString(string val)
         {
             TestValue(

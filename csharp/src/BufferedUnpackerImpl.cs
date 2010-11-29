@@ -43,6 +43,21 @@ public class BufferedUnpackerImpl : UnpackerImpl
         return null;
     }
 
+    internal bool TryUnpackNull()
+    {
+        if (!TryMore(1))
+        {
+            return false;
+        }
+        int b = buffer[offset] & 0xff;
+        if (b != 0xc0) // nil
+        {
+            return false;
+        }
+        Advance(1);
+        return true;
+    }
+
     internal float UnpackFloat()
     {
         More(1);
@@ -88,6 +103,10 @@ public class BufferedUnpackerImpl : UnpackerImpl
 
     internal string UnpackString()
     {
+        if (TryUnpackNull())
+        {
+            return null;
+        }
         int length = UnpackRaw();
         More(length);
         String s;
@@ -147,13 +166,22 @@ public class BufferedUnpackerImpl : UnpackerImpl
 
     private void More(int require)
     {
+        if (!TryMore(require))
+        {
+            // FIXME
+            throw new UnpackException("insufficient buffer");
+        }
+    }
+
+    private bool TryMore(int require)
+    {
         while (filled - offset < require)
         {
             if (!fillCallback())
             {
-                // FIXME
-                throw new UnpackException("insufficient buffer");
+                return false;
             }
         }
+        return true;
     }
 }
