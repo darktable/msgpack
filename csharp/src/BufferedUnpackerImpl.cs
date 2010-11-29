@@ -60,24 +60,8 @@ public class BufferedUnpackerImpl : UnpackerImpl
 
     internal float UnpackFloat()
     {
-        More(1);
-        int b = buffer[offset];
-        switch (b & 0xff)
-        {
-            case 0xca: // float
-                More(5);
-                float f = BitConverter.ToSingle(buffer, offset + 1);
-                Advance(5);
-                return f;
-            case 0xcb: // double
-                More(9);
-                double d = BitConverter.ToDouble(buffer, offset + 1);
-                Advance(9);
-                // FIXME overflow check
-                return (float) d;
-            default:
-                throw new MessageTypeException();
-        }
+        // FIXME overflow check
+        return (float) UnpackDouble();
     }
 
     internal double UnpackDouble()
