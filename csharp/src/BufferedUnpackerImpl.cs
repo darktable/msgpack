@@ -67,22 +67,30 @@ public class BufferedUnpackerImpl : UnpackerImpl
     internal double UnpackDouble()
     {
         More(1);
-        int b = buffer[offset];
+        byte b = buffer[offset];
         switch (b & 0xff)
         {
-            case 0xca: // float
-                More(5);
-                float f = BitConverter.ToSingle(buffer, offset + 1);
-                Advance(5);
-                return f;
-            case 0xcb: // double
-                More(9);
-                double d = BitConverter.ToDouble(buffer, offset + 1);
-                Advance(9);
-                return d;
+            case 0xca:
+                return UnpackFloatExact();
+            case 0xcb:
+                return UnpackDoubleExact();
             default:
                 throw new MessageTypeException();
         }
+    }
+
+    private double UnpackDoubleExact()
+    {
+        More(9);
+        Advance(9);
+        return BitConverter.ToDouble(buffer, offset - 8);
+    }
+
+    private double UnpackFloatExact()
+    {
+        More(5);
+        Advance(5);
+        return BitConverter.ToSingle(buffer, offset - 4);
     }
 
     internal string UnpackString()
@@ -109,26 +117,20 @@ public class BufferedUnpackerImpl : UnpackerImpl
     internal int UnpackRaw()
     {
         More(1);
-        int b = buffer[offset];
-        if ((b & 0xe0) == 0xa0)  // fix raw
+        byte b = buffer[offset];
+        if ((b & 0xe0) == 0xa0)  
         {
+            // fix raw
             Advance(1);
             return b & 0x1f;
         }
-        int len;
         switch (b & 0xff)
         {
-            case 0xda: // raw 16
-                More(3);
-                len = BitConverter.ToUInt16(buffer, offset + 1);
-                Advance(3);
-                return len;
-            case 0xdb: // raw 32
-                More(5);
+            case 0xda:
+                return UnpackUInt16Exact();
+            case 0xdb:
                 // FIXME overflow check
-                len = (int) BitConverter.ToUInt32(buffer, offset + 1);
-                Advance(5);
-                return len;
+                return (int) UnpackUInt32Exact();
             default:
                 throw new MessageTypeException();
         }
@@ -141,6 +143,58 @@ public class BufferedUnpackerImpl : UnpackerImpl
         Array.Copy(buffer, offset, bytes, 0, length);
         Advance(length);
         return bytes;
+    }
+
+    internal ulong UnpackUlong()
+    {
+        More(1);
+        byte b = buffer[offset];
+        if ((b & 0x80) == 0) // positive fixnum
+        {  
+            Advance(1);
+            return b;
+        }
+        switch (b & 0xff)
+        {
+            case 0xcc:
+                return UnpackUInt8Exact();
+            case 0xcd:
+                return UnpackUInt16Exact();
+            case 0xce: 
+                return UnpackUInt32Exact();
+            case 0xcf: 
+                return UnpackUInt64Exact();
+            default:
+                throw new MessageTypeException();
+        }
+    }
+
+    private ulong UnpackUInt8Exact()
+    {
+        More(2);
+        Advance(2);
+        return buffer[offset - 1];
+    }
+
+    private ushort UnpackUInt16Exact()
+    {
+        More(3);
+        Advance(3);
+        return BitConverter.ToUInt16(buffer, offset - 2);
+    }
+
+    private uint UnpackUInt32Exact()
+    {
+        More(5);
+        Advance(5);
+        return BitConverter.ToUInt32(buffer, offset - 4);        
+    }
+
+    private ulong UnpackUInt64Exact()
+    {
+        More(9);
+        Advance(9);
+        return BitConverter.ToUInt64(buffer, offset - 8); 
     }
 
     private void Advance(int length)

@@ -93,7 +93,7 @@ namespace MsgPack.Test
             Repeat(100, rand => TestString(GetRandomString(rand, (1 << 15), (1 << 15) + 100)));
 
             // large size string
-            Repeat(5, rand => TestString(GetRandomString(rand, (1 << 25), (1 << 25) + 100)));
+            Repeat(2, rand => TestString(GetRandomString(rand, (1 << 25), (1 << 25) + 100)));
         }
 
         [Test]
@@ -116,6 +116,37 @@ namespace MsgPack.Test
             int length = minLength + rand.Next(maxLength - minLength + 1);
             Repeat(length, r => sb.Append((char)('a' + r.Next(26))));
             return sb.ToString();
+        }
+
+        [Test]
+        public void TestULong()
+        {
+            TestULong(0);
+            TestULong(1);
+            TestULong(byte.MaxValue);
+            TestULong((ulong)sbyte.MaxValue);
+            TestULong(ushort.MaxValue);
+            TestULong((ulong)short.MaxValue);
+            TestULong(int.MaxValue);
+            TestULong(uint.MaxValue);
+            TestULong(long.MaxValue);
+            TestULong(ulong.MaxValue);
+            Repeat(1000, rand => TestULong(NextUlong(rand)));
+        }
+
+        private static void TestULong(ulong val)
+        {
+            TestValue(
+                val,
+                (packer, v) => packer.PackULong(v),
+                unpacker => unpacker.UnpackUlong());
+        }
+
+        public static ulong NextUlong(Random rand)
+        {
+            var buffer = new byte[sizeof(ulong)];
+            rand.NextBytes(buffer);
+            return BitConverter.ToUInt64(buffer, 0);
         }
 
         private static void TestValue<T>(T val, Action<Packer, T> pack, Func<Unpacker, T> unpack)

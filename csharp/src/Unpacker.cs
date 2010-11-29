@@ -71,6 +71,11 @@ public class Unpacker
         return impl.UnpackString();
     }
 
+    public ulong UnpackUlong()
+    {
+        return impl.UnpackUlong();
+    }
+
     public void BufferConsumed(int size)
     {
         impl.filled += size;

@@ -1,8 +1,16 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Text;
 
 public class Packer
 {
+    private const uint MaxPositiveFixnum = (1 << 7) - 1;
+    private const uint MaxUInt8 = (1 << 8) - 1;
+    private const ulong MaxUInt16 = (1L << 16) - 1;
+    private const ulong MaxUInt32 = (1L << 32) - 1;
+    private const int MaxFixRawLength = 31;
+    private const int MaxRaw16Length = 65535;
+
     private readonly BinaryWriter writer;
 
     public Packer(Stream stream)
@@ -65,12 +73,12 @@ public class Packer
 
     public Packer PackRaw(int n)
     {
-        if (n < 32)
+        if (n <= MaxFixRawLength)
         {
             var b = (byte) (0xa0 | n);
             writer.Write(b);
         }
-        else if (n < 65536)
+        else if (n <= MaxRaw16Length)
         {
             writer.Write((byte) 0xda);
             writer.Write((ushort) n);
@@ -93,5 +101,69 @@ public class Packer
     {
         writer.Write(b, off, length);
         return this;
+    }
+
+    public Packer PackULong(ulong d)
+    {
+        if (d <= MaxPositiveFixnum) 
+        {
+            PackPositiveFixnumExact(d);
+        }
+        else
+        {
+            if (d <= MaxUInt16)
+            {
+                if (d <= MaxUInt8)
+                {
+                    PackUInt8Exact(d);
+                }
+                else
+                {
+                    PackUInt16Exact(d);
+                }
+            }
+            else
+            {
+                if (d <= MaxUInt32)
+                {
+                    PackUInt32Exact(d);
+                }
+                else
+                {
+                    PackUInt64Exact(d);
+                }
+            }
+        }
+
+        return this;
+    }
+
+    private void PackPositiveFixnumExact(ulong d)
+    {
+        writer.Write((byte) d);
+    }
+
+    private void PackUInt8Exact(ulong d)
+    {
+        writer.Write((byte)0xcc);
+        writer.Write((byte)d);
+    }
+
+    private void PackUInt16Exact(ulong d)
+    {
+        writer.Write((byte)0xcd);
+        writer.Write((UInt16)d);
+    }
+
+    private void PackUInt32Exact(ulong d)
+    {
+        writer.Write((byte)0xce);
+        writer.Write((UInt32)d);
+    }
+
+    private void PackUInt64Exact(ulong d)
+    {
+        writer.Write((byte)0xcf);
+        writer.Write(d);
     }
 }
