@@ -1,4 +1,5 @@
 ﻿public interface IMessagePackable
 {
-    void MessagePack(Packer packer);
+    void ToMsgPack(Packer packer);
+    void FromMsgPack(Unpacker unpacker);
 }

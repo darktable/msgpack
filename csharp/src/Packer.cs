@@ -21,11 +21,6 @@ public class Packer
         writer = new BinaryWriter(stream);
     }
 
-    public Packer Pack(bool val)
-    {
-        return PackBool(val);
-    }
-
     public Packer PackTrue()
     {
         writer.Write((byte) 0xc3);
@@ -318,6 +313,12 @@ public class Packer
     public Packer PackEnum<T>(T e)
     {
         return PackInt(Convert.ToInt32(e));
+    }
+
+    public Packer Pack<TValue>(TValue val) where TValue : IMessagePackable, new()
+    {
+        val.ToMsgPack(this);
+        return this;
     }
 
     private void PackInt8Exact(sbyte d)

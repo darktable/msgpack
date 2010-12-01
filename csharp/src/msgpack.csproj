@@ -34,10 +34,8 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BooleanType.cs" />
     <Compile Include="BufferedUnpackerImpl.cs" />
     <Compile Include="IMessagePackable.cs" />
-    <Compile Include="MessagePackObject.cs" />
     <Compile Include="MessageTypeException.cs" />
     <Compile Include="Packer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

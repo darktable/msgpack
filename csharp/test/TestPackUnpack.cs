@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -334,24 +336,31 @@ namespace MsgPack.Test
             TestEnum(OtherEnum.C);
         }
 
-        private enum SomeEnum
-        {
-            A, B, C
-        }
-
-        private enum OtherEnum
-        {
-            A = 34,
-            B = 0,
-            C = int.MaxValue
-        }
-
         private static void TestEnum<T>(T val)
         {
             TestValue(
                 val,
                 (packer, v) => packer.PackEnum(v),
                 unpacker => unpacker.UnpackEnum<T>());
+        }
+
+        [Test]
+        public void TestMessagePackable()
+        {
+            Repeat(
+                1000,
+                rand =>
+                    TestValue(
+                        new DataClass
+                            {
+                                Bool = rand.Next(2) == 1,
+                                Double = rand.NextDouble(),
+                                Int = rand.Next(int.MinValue, int.MaxValue),
+                                Long = NextLong(rand),
+                                String = GetRandomString(rand, 0, 10000)
+                            },
+                        (packer, val) => packer.Pack(val),
+                        unpacker => unpacker.Unpack<DataClass>()));
         }
 
         private static void TestValue<T>(T val, Action<Packer, T> pack, Func<Unpacker, T> unpack)
@@ -371,6 +380,63 @@ namespace MsgPack.Test
             {
                 action(rand);
             }
+        }
+    }
+
+    internal enum SomeEnum
+    {
+        A, B, C
+    }
+
+    internal enum OtherEnum
+    {
+        A = 34,
+        B = 0,
+        C = int.MaxValue
+    }
+
+    internal class DataClass: IMessagePackable
+    {
+        public bool Bool { get; set; }
+        public string String { get; set; }
+        public int Int { get; set; }
+        public long Long { get; set; }
+        public double Double { get; set; }
+        
+        public void ToMsgPack(Packer p)
+        {
+            p.PackBool(Bool);
+            p.PackString(String);
+            p.PackInt(Int);
+            p.PackLong(Long);
+            p.PackDouble(Double);
+        }
+
+        public void FromMsgPack(Unpacker u)
+        {
+            Bool = u.UnpackBool();
+            String = u.UnpackString();
+            Int = u.UnpackInt();
+            Long = u.UnpackLong();
+            Double = u.UnpackDouble();
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+            if (obj.GetType() != typeof (DataClass))
+            {
+                return false;
+            }
+            var other = (DataClass) obj;
+            return other.Bool.Equals(Bool) && Equals(other.String, String) && other.Int == Int && other.Long == Long && other.Double.Equals(Double);
         }
     }
 }

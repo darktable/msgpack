@@ -121,6 +121,13 @@ public class Unpacker
         return (T)Enum.ToObject(typeof(T), impl.UnpackInt());
     }
 
+    public TValue Unpack<TValue>() where TValue : IMessagePackable, new()
+    {
+        var val = new TValue();
+        val.FromMsgPack(this);
+        return val;
+    }
+
     public void BufferConsumed(int size)
     {
         impl.filled += size;
