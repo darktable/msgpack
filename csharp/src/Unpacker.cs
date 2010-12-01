@@ -111,6 +111,11 @@ public class Unpacker
         return impl.UnpackSByte();
     }
 
+    public char UnpackChar()
+    {
+        return (char)impl.UnpackInt();
+    }
+
     public void BufferConsumed(int size)
     {
         impl.filled += size;

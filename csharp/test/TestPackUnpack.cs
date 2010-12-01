@@ -307,6 +307,22 @@ namespace MsgPack.Test
                 unpacker => unpacker.UnpackByte());
         }
 
+        [Test]
+        public void TestChar()
+        {
+            TestChar(char.MaxValue);
+            TestChar(char.MinValue);
+            Repeat(1000, rand => TestChar((char)rand.Next()));
+        }
+
+        private static void TestChar(char val)
+        {
+            TestValue(
+                val,
+                (packer, v) => packer.PackChar(v),
+                unpacker => unpacker.UnpackChar());
+        }
+
         private static void TestValue<T>(T val, Action<Packer, T> pack, Func<Unpacker, T> unpack)
         {
             var stream = new MemoryStream();

@@ -310,6 +310,11 @@ public class Packer
         return this;
     }
 
+    public Packer PackChar(char ch)
+    {
+        return PackInt(ch);
+    }
+
     private void PackInt8Exact(sbyte d)
     {
         writer.Write((byte)0xd0);
