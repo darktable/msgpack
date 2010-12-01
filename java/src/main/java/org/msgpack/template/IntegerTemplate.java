@@ -42,7 +42,8 @@ public class IntegerTemplate implements Template {
 	static final IntegerTemplate instance = new IntegerTemplate();
 
 	static {
-		CustomMessage.register(Integer.class, instance);
+		TemplateRegistry.register(Integer.class, instance);
+		TemplateRegistry.register(int.class, instance);
 	}
 }
 

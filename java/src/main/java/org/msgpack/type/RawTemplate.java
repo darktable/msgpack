@@ -15,35 +15,37 @@
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 //
-package org.msgpack.template;
+package org.msgpack.type;
 
 import java.io.IOException;
 import org.msgpack.*;
+import org.msgpack.template.TemplateRegistry;
 
-public class DoubleTemplate implements Template {
-	private DoubleTemplate() { }
+public class RawTemplate implements Template {
+	static void load() { }
+
+	private RawTemplate() { }
 
 	public void pack(Packer pk, Object target) throws IOException {
-		pk.packDouble(((Double)target));
+		pk.packByteArray(((Raw)target).toByteArray());
 	}
 
 	public Object unpack(Unpacker pac, Object to) throws IOException, MessageTypeException {
-		return pac.unpackDouble();
+		return new Raw(pac.unpackByteArray());
 	}
 
 	public Object convert(MessagePackObject from, Object to) throws MessageTypeException {
-		return from.asDouble();
+		return new Raw(from.asByteArray());
 	}
 
-	static public DoubleTemplate getInstance() {
+	static public RawTemplate getInstance() {
 		return instance;
 	}
 
-	static final DoubleTemplate instance = new DoubleTemplate();
+	static final RawTemplate instance = new RawTemplate();
 
 	static {
-		TemplateRegistry.register(Double.class, instance);
-		TemplateRegistry.register(double.class, instance);
+		TemplateRegistry.register(Raw.class, instance);
 	}
 }
 

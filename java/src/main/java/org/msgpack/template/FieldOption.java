@@ -17,32 +17,11 @@
 //
 package org.msgpack.template;
 
-import java.io.IOException;
-import org.msgpack.*;
-
-public class StringTemplate implements Template {
-	private StringTemplate() { }
-
-	public void pack(Packer pk, Object target) throws IOException {
-		pk.packString((String)target);
-	}
-
-	public Object unpack(Unpacker pac, Object to) throws IOException, MessageTypeException {
-		return pac.unpackString();
-	}
-
-	public Object convert(MessagePackObject from, Object to) throws MessageTypeException {
-		return from.asString();
-	}
-
-	static public StringTemplate getInstance() {
-		return instance;
-	}
-
-	static final StringTemplate instance = new StringTemplate();
-
-	static {
-		TemplateRegistry.register(String.class, instance);
-	}
+public enum FieldOption {
+	IGNORE,
+	REQUIRED,
+	OPTIONAL,
+	NULLABLE,
+	DEFAULT;
 }
 

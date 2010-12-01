@@ -17,33 +17,19 @@
 //
 package org.msgpack.template;
 
-import java.io.IOException;
-import org.msgpack.*;
+@SuppressWarnings("serial")
+public class TemplateBuildException extends RuntimeException {
 
-public class LongTemplate implements Template {
-	private LongTemplate() { }
-
-	public void pack(Packer pk, Object target) throws IOException {
-		pk.packLong((Long)target);
+	public TemplateBuildException(String reason) {
+		super(reason);
 	}
 
-	public Object unpack(Unpacker pac, Object to) throws IOException, MessageTypeException {
-		return pac.unpackLong();
+	public TemplateBuildException(String reason, Throwable t) {
+		super(reason, t);
 	}
 
-	public Object convert(MessagePackObject from, Object to) throws MessageTypeException {
-		return from.asLong();
-	}
-
-	static public LongTemplate getInstance() {
-		return instance;
-	}
-
-	static final LongTemplate instance = new LongTemplate();
-
-	static {
-		TemplateRegistry.register(Long.class, instance);
-		TemplateRegistry.register(long.class, instance);
+	public TemplateBuildException(Throwable t) {
+		super(t);
 	}
 }
 

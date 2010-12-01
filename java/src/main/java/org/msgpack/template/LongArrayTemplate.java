@@ -17,48 +17,60 @@
 //
 package org.msgpack.template;
 
-import java.nio.ByteBuffer;
 import java.io.IOException;
 import org.msgpack.*;
 
-public class ByteBufferTemplate implements Template {
-	private ByteBufferTemplate() { }
+public class LongArrayTemplate implements Template {
+	private LongArrayTemplate() { }
 
 	public void pack(Packer pk, Object target) throws IOException {
-		byte[] bytes = byteBufferToByteArray((ByteBuffer)target);
-		pk.packByteArray(bytes);
-	}
-
-	private static byte[] byteBufferToByteArray(ByteBuffer b) {
-		if (b.hasArray() && b.position() == 0 && b.arrayOffset() == 0
-				&& b.remaining() == b.capacity()) {
-			return b.array();
-		} else {
-			int size = b.remaining();
-			byte[] bytes = new byte[size];
-			System.arraycopy(b.array(), b.arrayOffset() + b.position(), bytes, 0, size);
-			return bytes;
+		if(!(target instanceof long[])) {
+			throw new MessageTypeException();
+		}
+		long[] array = (long[])target;
+		pk.packArray(array.length);
+		for(long a : array) {
+			pk.pack(a);
 		}
 	}
 
 	public Object unpack(Unpacker pac, Object to) throws IOException, MessageTypeException {
-		byte[] bytes = pac.unpackByteArray();
-		return ByteBuffer.wrap(bytes);
+		int length = pac.unpackArray();
+		long[] array;
+		if(to != null && to instanceof long[] && ((long[])to).length == length) {
+			array = (long[])to;
+		} else {
+			array = new long[length];
+		}
+		for(int i=0; i < length; i++) {
+			array[i] = pac.unpackLong();
+		}
+		return array;
 	}
 
 	public Object convert(MessagePackObject from, Object to) throws MessageTypeException {
-		byte[] bytes = from.asByteArray();
-		return ByteBuffer.wrap(bytes);
+		MessagePackObject[] src = from.asArray();
+		long[] array;
+		if(to != null && to instanceof long[] && ((long[])to).length == src.length) {
+			array = (long[])to;
+		} else {
+			array = new long[src.length];
+		}
+		for(int i=0; i < src.length; i++) {
+			MessagePackObject s = src[i];
+			array[i] = s.asLong();
+		}
+		return array;
 	}
 
-	static public ByteBufferTemplate getInstance() {
+	static public LongArrayTemplate getInstance() {
 		return instance;
 	}
 
-	static final ByteBufferTemplate instance = new ByteBufferTemplate();
+	static final LongArrayTemplate instance = new LongArrayTemplate();
 
 	static {
-		TemplateRegistry.register(ByteBuffer.class, instance);
+		TemplateRegistry.register(long[].class, instance);
 	}
 }
 
