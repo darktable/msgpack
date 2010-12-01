@@ -315,6 +315,11 @@ public class Packer
         return PackInt(ch);
     }
 
+    public Packer PackEnum<T>(T e)
+    {
+        return PackInt(Convert.ToInt32(e));
+    }
+
     private void PackInt8Exact(sbyte d)
     {
         writer.Write((byte)0xd0);

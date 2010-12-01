@@ -323,6 +323,37 @@ namespace MsgPack.Test
                 unpacker => unpacker.UnpackChar());
         }
 
+        [Test]
+        public void TestEnum()
+        {
+            TestEnum(SomeEnum.A);
+            TestEnum(SomeEnum.B);
+            TestEnum(SomeEnum.C);
+            TestEnum(OtherEnum.A);
+            TestEnum(OtherEnum.B);
+            TestEnum(OtherEnum.C);
+        }
+
+        private enum SomeEnum
+        {
+            A, B, C
+        }
+
+        private enum OtherEnum
+        {
+            A = 34,
+            B = 0,
+            C = int.MaxValue
+        }
+
+        private static void TestEnum<T>(T val)
+        {
+            TestValue(
+                val,
+                (packer, v) => packer.PackEnum(v),
+                unpacker => unpacker.UnpackEnum<T>());
+        }
+
         private static void TestValue<T>(T val, Action<Packer, T> pack, Func<Unpacker, T> unpack)
         {
             var stream = new MemoryStream();

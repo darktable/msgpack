@@ -116,6 +116,11 @@ public class Unpacker
         return (char)impl.UnpackInt();
     }
 
+    public T UnpackEnum<T>()
+    {
+        return (T)Enum.ToObject(typeof(T), impl.UnpackInt());
+    }
+
     public void BufferConsumed(int size)
     {
         impl.filled += size;
