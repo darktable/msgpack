@@ -149,9 +149,8 @@ public class BufferedUnpackerImpl : UnpackerImpl
     {
         More(1);
         byte b = buffer[offset];
-        if ((b & 0x80) == 0) // positive fixnum
-        {  
-            Advance(1);
+        if (TryUnpackPositiveFixnum(b))
+        {
             return b;
         }
         switch (b & 0xff)
@@ -173,14 +172,12 @@ public class BufferedUnpackerImpl : UnpackerImpl
     {
         More(1);
         byte b = buffer[offset];
-        if ((b & 0x80) == 0) // positive fixnum
-        { 
-            Advance(1);
+        if (TryUnpackPositiveFixnum(b))
+        {
             return b;
         }
-        if ((b & 0xe0) == 0xe0) // negative fixnum
-        { 
-            Advance(1);
+        if (TryUnpackNegativeFixnum(b))
+        {
             return (sbyte)b;
         }
         switch (b & 0xff)
@@ -205,6 +202,167 @@ public class BufferedUnpackerImpl : UnpackerImpl
             default:
                 throw new MessageTypeException();
         }
+    }
+
+    internal uint UnpackUInt()
+    {
+        More(1);
+        byte b = buffer[offset];
+        if (TryUnpackPositiveFixnum(b))
+        {
+            return b;
+        }
+        switch (b & 0xff)
+        {
+            case 0xcc:
+                return UnpackUInt8Exact();
+            case 0xcd:
+                return UnpackUInt16Exact();
+            case 0xce:
+                return UnpackUInt32Exact();
+            default:
+                throw new MessageTypeException();
+        }
+    }
+
+    internal int UnpackInt()
+    {
+        More(1);
+        byte b = buffer[offset];
+        if (TryUnpackPositiveFixnum(b))
+        {
+            return b;
+        }
+        if (TryUnpackNegativeFixnum(b))
+        {
+            return (sbyte)b;
+        }
+        switch (b & 0xff)
+        {
+            case 0xcc:
+                return UnpackUInt8Exact();
+            case 0xcd:
+                return UnpackUInt16Exact();
+            case 0xce:
+                // FIXME overflow check
+                return (int)UnpackUInt32Exact();
+            case 0xd0:
+                return UnpackInt8Exact();
+            case 0xd1:
+                return UnpackInt16Exact();
+            case 0xd2:
+                return UnpackInt32Exact();
+            default:
+                throw new MessageTypeException();
+        }
+    }
+
+    internal ushort UnpackUShort()
+    {
+        More(1);
+        byte b = buffer[offset];
+        if (TryUnpackPositiveFixnum(b))
+        {
+            return b;
+        }
+        switch (b & 0xff)
+        {
+            case 0xcc:
+                return UnpackUInt8Exact();
+            case 0xcd:
+                return UnpackUInt16Exact();
+            default:
+                throw new MessageTypeException();
+        }
+    }
+
+    internal short UnpackShort()
+    {
+        More(1);
+        byte b = buffer[offset];
+        if (TryUnpackPositiveFixnum(b))
+        {
+            return b;
+        }
+        if (TryUnpackNegativeFixnum(b))
+        {
+            return (sbyte)b;
+        }
+        switch (b & 0xff)
+        {
+            case 0xcc:
+                return UnpackUInt8Exact();
+            case 0xcd:
+                // FIXME overflow check
+                return (short)UnpackUInt16Exact();
+            case 0xd0:
+                return UnpackInt8Exact();
+            case 0xd1:
+                return UnpackInt16Exact();
+            default:
+                throw new MessageTypeException();
+        }
+    }
+
+    internal byte UnpackByte()
+    {
+        More(1);
+        byte b = buffer[offset];
+        if (TryUnpackPositiveFixnum(b))
+        {
+            return b;
+        }
+        switch (b & 0xff)
+        {
+            case 0xcc:
+                return UnpackUInt8Exact();
+            default:
+                throw new MessageTypeException();
+        }
+    }
+
+    internal sbyte UnpackSByte()
+    {
+        More(1);
+        byte b = buffer[offset];
+        if (TryUnpackPositiveFixnum(b))
+        {
+            return (sbyte)b;
+        }
+        if (TryUnpackNegativeFixnum(b))
+        {
+            return (sbyte)b;
+        }
+        switch (b & 0xff)
+        {
+            case 0xcc:
+                // FIXME overflow check
+                return (sbyte)UnpackUInt8Exact();
+            case 0xd0:
+                return UnpackInt8Exact();
+            default:
+                throw new MessageTypeException();
+        }
+    }
+
+    private bool TryUnpackPositiveFixnum(byte b)
+    {
+        if ((b & 0x80) == 0) // positive fixnum
+        {
+            Advance(1);
+            return true;
+        }
+        return false;
+    }
+
+    private bool TryUnpackNegativeFixnum(byte b)
+    {
+        if ((b & 0xe0) == 0xe0) // negative fixnum
+        {
+            Advance(1);
+            return true;
+        }
+        return false;
     }
 
     private sbyte UnpackInt8Exact()

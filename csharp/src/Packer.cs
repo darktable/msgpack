@@ -179,6 +179,137 @@ public class Packer
         return this;
     }
 
+    public Packer PackUInt(uint d)
+    {
+        if (d <= MaxFixnum)
+        {
+            PackFixnumExact((sbyte)d);
+        }
+        else
+        {
+            if (d <= MaxUInt16)
+            {
+                if (d <= MaxUInt8)
+                {
+                    PackUInt8Exact((byte)d);
+                }
+                else
+                {
+                    PackUInt16Exact((ushort)d);
+                }
+            }
+            else
+            {
+                PackUInt32Exact(d);
+            }
+        }
+
+        return this;
+    }
+
+    public Packer PackInt(int d)
+    {
+        if (d > 0)
+        {
+            PackUInt((uint)d);
+        }
+        else if (d >= MinFixnum)
+        {
+            PackFixnumExact((sbyte)d);
+        }
+        else
+        {
+            if (d < -(1L << 15))
+            {
+                PackInt32Exact(d);
+            }
+            else
+            {
+                if (d < MinInt8)
+                {
+                    PackInt16Exact((short)d);
+                }
+                else
+                {
+                    PackInt8Exact((sbyte)d);
+                }
+            }
+        }
+        return this;
+    }
+
+    public Packer PackUShort(ushort d)
+    {
+        if (d <= MaxFixnum)
+        {
+            PackFixnumExact((sbyte)d);
+        }
+        else
+        {
+            if (d <= MaxUInt8)
+            {
+                PackUInt8Exact((byte)d);
+            }
+            else
+            {
+                PackUInt16Exact(d);
+            }
+        }
+
+        return this;
+    }
+
+    public Packer PackShort(short d)
+    {
+        if (d > 0)
+        {
+            PackUShort((ushort)d);
+        }
+        else if (d >= MinFixnum)
+        {
+            PackFixnumExact((sbyte)d);
+        }
+        else
+        {
+            if (d < MinInt8)
+            {
+                PackInt16Exact(d);
+            }
+            else
+            {
+                PackInt8Exact((sbyte)d);
+            }
+        }
+        return this;
+    }
+
+    public Packer PackByte(byte d)
+    {
+        if (d <= MaxFixnum)
+        {
+            PackFixnumExact((sbyte)d);
+        }
+        else
+        {
+            PackUInt8Exact(d);
+        }
+
+        return this;
+    }
+
+    public Packer PackSByte(sbyte d)
+    {
+        if (MinFixnum <= d && d <= MaxFixnum)
+        {
+            PackFixnumExact(d);
+        }
+        else
+        {
+            PackInt8Exact(d);
+        }
+        return this;
+    }
+
     private void PackInt8Exact(sbyte d)
     {
         writer.Write((byte)0xd0);

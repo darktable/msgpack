@@ -81,6 +81,36 @@ public class Unpacker
         return impl.UnpackLong();
     }
 
+    public uint UnpackUInt()
+    {
+        return impl.UnpackUInt();
+    }
+
+    public int UnpackInt()
+    {
+        return impl.UnpackInt();
+    }
+
+    public ushort UnpackUShort()
+    {
+        return impl.UnpackUShort();
+    }
+
+    public short UnpackShort()
+    {
+        return impl.UnpackShort();
+    }
+
+    public byte UnpackByte()
+    {
+        return impl.UnpackByte();
+    }
+
+    public sbyte UnpackSByte()
+    {
+        return impl.UnpackSByte();
+    }
+
     public void BufferConsumed(int size)
     {
         impl.filled += size;
