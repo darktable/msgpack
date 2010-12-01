@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using NUnit.Framework;
 
@@ -241,13 +242,10 @@ namespace MsgPack.Test
         [Test]
         public void TestUShort()
         {
-            TestUShort(0);
-            TestUShort(1);
-            TestUShort(byte.MaxValue);
-            TestUShort((ushort)sbyte.MaxValue);
-            TestUShort(ushort.MaxValue);
-            TestUShort((ushort)short.MaxValue);
-            Repeat(1000, rand => TestUShort((ushort)rand.Next(ushort.MaxValue + 1)));
+            for (ushort i = ushort.MinValue; i < ushort.MaxValue; i++)
+            {
+                TestUShort(i);
+            }
         }
 
         private static void TestUShort(ushort val)
@@ -261,15 +259,10 @@ namespace MsgPack.Test
         [Test]
         public void TestShort()
         {
-            TestShort(0);
-            TestShort(1);
-            TestShort(-1);
-            TestShort(byte.MaxValue);
-            TestShort(sbyte.MaxValue);
-            TestShort(sbyte.MinValue);
-            TestShort(short.MaxValue);
-            TestShort(short.MinValue);
-            Repeat(1000, rand => TestShort((short)rand.Next(short.MinValue, short.MaxValue)));
+            for (short i = short.MinValue; i < short.MaxValue; i++)
+            {
+                TestShort(i);
+            }
         }
 
         private static void TestShort(short val)
@@ -283,12 +276,10 @@ namespace MsgPack.Test
         [Test]
         public void TestSByte()
         {
-            TestSByte(0);
-            TestSByte(1);
-            TestSByte(-1);
-            TestSByte(sbyte.MinValue);
-            TestSByte(sbyte.MaxValue);
-            Repeat(1000, rand => TestSByte((sbyte)rand.Next(sbyte.MinValue, sbyte.MaxValue)));
+            for (sbyte i = sbyte.MinValue; i < sbyte.MaxValue; i++)
+            {
+                TestSByte(i);
+            }
         }
 
         private static void TestSByte(sbyte val)
@@ -302,10 +293,10 @@ namespace MsgPack.Test
         [Test]
         public void TestByte()
         {
-            TestByte(0);
-            TestByte(1);
-            TestByte(byte.MaxValue);
-            Repeat(1000, rand => TestByte((byte)rand.Next(byte.MaxValue + 1)));
+            for (byte i = byte.MinValue; i < byte.MaxValue; i++)
+            {
+                TestByte(i);
+            }
         }
 
         private static void TestByte(byte val)
