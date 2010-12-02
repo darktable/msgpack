@@ -363,14 +363,60 @@ namespace MsgPack.Test
                         unpacker => unpacker.Unpack<DataClass>()));
         }
 
-        private static void TestValue<T>(T val, Action<Packer, T> pack, Func<Unpacker, T> unpack)
+        [Test]
+        public void TestObject()
+        {
+            TestObject(null);
+            TestObject(true);
+            TestObject(12334545.2342345345);
+            TestObject(0.0000456f);
+
+            TestObject(ulong.MaxValue);
+            TestObject(long.MaxValue);
+            TestObject(uint.MaxValue);
+            TestObject(int.MaxValue);
+            TestObject(ushort.MaxValue);
+            TestObject(short.MaxValue);
+            TestObject(byte.MaxValue);
+            TestObject(sbyte.MaxValue);
+            TestObject(1);
+            TestObject(-1);
+
+            TestObject(SomeEnum.C, (expected, actual) => Assert.AreEqual((int) expected, actual));
+            TestObject('z', (expected, actual) => Assert.AreEqual((int) (char) expected, actual));
+            
+            TestObject(new DataClass {Bool = true},
+                       (expected, actual) => Assert.AreEqual(((DataClass) expected).Bool, actual));
+
+            //TestObject("str", (expected, actual) => Assert.AreEqual(Encoding.UTF8.GetBytes((string)expected), actual));
+        }
+
+        private static void TestObject(object val, Action<object, object> equalityAssert = null)
+        {
+            TestValue(
+                val,
+                (packer, v) => packer.PackObject(v),
+                unpacker => unpacker.UnpackObject(),
+                equalityAssert);
+        }
+
+        private static void TestValue<T>(T val, Action<Packer, T> pack, Func<Unpacker, T> unpack,
+                                         Action<object, object> equalityAssert = null)
         {
             var stream = new MemoryStream();
             pack(new Packer(stream), val);
 
             stream.Seek(0, SeekOrigin.Begin);
             var unpacker = new Unpacker(stream);
-            Assert.AreEqual(val, unpack(unpacker));
+            var unpacked = unpack(unpacker);
+            if (equalityAssert != null)
+            {
+                equalityAssert(val, unpacked);
+            }
+            else
+            {
+                Assert.AreEqual(val, unpacked);
+            }
         }
 
         private static void Repeat(int times, Action<Random> action)

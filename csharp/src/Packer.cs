@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
@@ -16,9 +17,32 @@ public class Packer
 
     private readonly BinaryWriter writer;
 
+    private Dictionary<Type, Action<object>> packerCallbacks;
+
     public Packer(Stream stream)
     {
         writer = new BinaryWriter(stream);
+        InitPackerCallbacks();
+    }
+
+
+    private void InitPackerCallbacks()
+    {
+        packerCallbacks = new Dictionary<Type, Action<object>>();
+
+        packerCallbacks[typeof(bool)] = val => PackBool((bool) val);
+        packerCallbacks[typeof(double)] = val => PackDouble((double) val);
+        packerCallbacks[typeof(float)] = val => PackFloat((float) val);
+        packerCallbacks[typeof(ulong)] = val => PackULong((ulong) val);
+        packerCallbacks[typeof(long)] = val => PackLong((long) val);
+        packerCallbacks[typeof(uint)] = val => PackUInt((uint) val);
+        packerCallbacks[typeof(int)] = val => PackInt((int) val);
+        packerCallbacks[typeof(ushort)] = val => PackUShort((ushort) val);
+        packerCallbacks[typeof(short)] = val => PackShort((short) val);
+        packerCallbacks[typeof(byte)] = val => PackByte((byte) val);
+        packerCallbacks[typeof(sbyte)] = val => PackSByte((sbyte) val);
+        packerCallbacks[typeof(char)] = val => PackChar((char) val);
+        packerCallbacks[typeof(string)] = val => PackString((string) val);
     }
 
     public Packer PackTrue()
@@ -315,9 +339,44 @@ public class Packer
         return PackInt(Convert.ToInt32(e));
     }
 
-    public Packer Pack<TValue>(TValue val) where TValue : IMessagePackable, new()
+    public Packer Pack<TValue>(TValue val) where TValue : IMessagePackable
     {
         val.ToMsgPack(this);
+        return this;
+    }
+
+    public Packer PackObject(object val)
+    {
+        if (val == null)
+        {
+            PackNull();
+        }
+        else
+        {
+            var type = val.GetType();
+            Action<object> packerCallback;
+            if (type.IsEnum)
+            {
+                packerCallback = v=> PackEnum(v);
+            }
+            else if (typeof(IMessagePackable).IsInstanceOfType(val))
+            {
+                packerCallback = v => Pack((IMessagePackable)v);
+            }
+            else
+            {
+                packerCallbacks.TryGetValue(type, out packerCallback);
+            }
+
+            if (packerCallback != null)
+            {
+                packerCallback(val);
+            }
+            else
+            {
+                throw new MessageTypeException(string.Format("Cannot pack object of type {0}", type.FullName));
+            }
+        }
         return this;
     }
 

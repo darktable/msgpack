@@ -3,6 +3,23 @@ using System.Text;
 
 public class BufferedUnpackerImpl : UnpackerImpl
 {
+    private const int BoolFalseType = 0xc2;
+    private const int BoolTrueType = 0xc3;
+    private const int NilType = 0xc0;
+    private const int FloatType = 0xca;
+    private const int DoubleType = 0xcb;
+    private const int Raw16Type = 0xda;
+    private const int Raw32Type = 0xdb;
+    private const int UInt8Type = 0xcc;
+    private const int UInt16Type = 0xcd;
+    private const int UInt32Type = 0xce;
+    private const int UInt64Type = 0xcf;
+    private const int Int8Type = 0xd0;
+    private const int Int16Type = 0xd1;
+    private const int Int32Type = 0xd2;
+    private const int Int64Type = 0xd3;
+
+
     private readonly Func<bool> fillCallback;
 
     internal byte[] buffer;
@@ -17,28 +34,41 @@ public class BufferedUnpackerImpl : UnpackerImpl
     internal bool UnpackBool()
     {
         More(1);
-        int b = buffer[offset] & 0xff;
-        switch (b)
+        switch (buffer[offset])
         {
-            case 0xc2:
-                Advance(1);
-                return false;
-            case 0xc3:
-                Advance(1);
-                return true;
+            case BoolFalseType:
+                return UnpackFalseExact();
+            case BoolTrueType:
+                return UnpackTrueExact();
             default:
                 throw new MessageTypeException();
         }
     }
 
+    private bool UnpackFalseExact()
+    {
+        Advance(1);
+        return false;
+    }
+
+    private bool UnpackTrueExact()
+    {
+        Advance(1);
+        return true;
+    }
+
     internal object UnpackNull()
     {
         More(1);
-        int b = buffer[offset] & 0xff;
-        if (b != 0xc0) // nil
+        if (buffer[offset] != NilType)
         {
             throw new MessageTypeException();
         }
+        return UnpackNullExact();
+    }
+
+    private object UnpackNullExact()
+    {
         Advance(1);
         return null;
     }
@@ -49,12 +79,11 @@ public class BufferedUnpackerImpl : UnpackerImpl
         {
             return false;
         }
-        int b = buffer[offset] & 0xff;
-        if (b != 0xc0) // nil
+        if (buffer[offset] != NilType)
         {
             return false;
         }
-        Advance(1);
+        UnpackNullExact();
         return true;
     }
 
@@ -67,12 +96,11 @@ public class BufferedUnpackerImpl : UnpackerImpl
     internal double UnpackDouble()
     {
         More(1);
-        byte b = buffer[offset];
-        switch (b & 0xff)
+        switch (buffer[offset])
         {
-            case 0xca:
+            case FloatType:
                 return UnpackFloatExact();
-            case 0xcb:
+            case DoubleType:
                 return UnpackDoubleExact();
             default:
                 throw new MessageTypeException();
@@ -118,22 +146,31 @@ public class BufferedUnpackerImpl : UnpackerImpl
     {
         More(1);
         byte b = buffer[offset];
-        if ((b & 0xe0) == 0xa0)  
+        if (IsFixRawType(b))  
         {
-            // fix raw
-            Advance(1);
-            return b & 0x1f;
+            return UnpackFixRawLengthExact(b);
         }
-        switch (b & 0xff)
+        switch (b)
         {
-            case 0xda:
+            case Raw16Type:
                 return UnpackUInt16Exact();
-            case 0xdb:
+            case Raw32Type:
                 // FIXME overflow check
                 return (int) UnpackUInt32Exact();
             default:
                 throw new MessageTypeException();
         }
+    }
+
+    private int UnpackFixRawLengthExact(byte b)
+    {
+        Advance(1);
+        return b & 0x1f;
+    }
+
+    private static bool IsFixRawType(byte b)
+    {
+        return (b & 0xe0) == 0xa0;
     }
 
     internal byte[] UnpackRawBody(int length)
@@ -153,15 +190,15 @@ public class BufferedUnpackerImpl : UnpackerImpl
         {
             return b;
         }
-        switch (b & 0xff)
+        switch (b)
         {
-            case 0xcc:
+            case UInt8Type:
                 return UnpackUInt8Exact();
-            case 0xcd:
+            case UInt16Type:
                 return UnpackUInt16Exact();
-            case 0xce: 
+            case UInt32Type: 
                 return UnpackUInt32Exact();
-            case 0xcf: 
+            case UInt64Type: 
                 return UnpackUInt64Exact();
             default:
                 throw new MessageTypeException();
@@ -180,24 +217,24 @@ public class BufferedUnpackerImpl : UnpackerImpl
         {
             return (sbyte)b;
         }
-        switch (b & 0xff)
+        switch (b)
         {
-            case 0xcc:
+            case UInt8Type:
                 return UnpackUInt8Exact();
-            case 0xcd:
+            case UInt16Type:
                 return UnpackUInt16Exact();
-            case 0xce:
+            case UInt32Type:
                 return UnpackUInt32Exact();
-            case 0xcf:
+            case UInt64Type:
                 // FIXME overflow check
                 return (long)UnpackUInt64Exact();
-            case 0xd0:
+            case Int8Type:
                 return UnpackInt8Exact();
-            case 0xd1: 
+            case Int16Type: 
                 return UnpackInt16Exact();
-            case 0xd2:
+            case Int32Type:
                 return UnpackInt32Exact();
-            case 0xd3:
+            case Int64Type:
                 return UnpackInt64Exact();
             default:
                 throw new MessageTypeException();
@@ -212,13 +249,13 @@ public class BufferedUnpackerImpl : UnpackerImpl
         {
             return b;
         }
-        switch (b & 0xff)
+        switch (b)
         {
-            case 0xcc:
+            case UInt8Type:
                 return UnpackUInt8Exact();
-            case 0xcd:
+            case UInt16Type:
                 return UnpackUInt16Exact();
-            case 0xce:
+            case UInt32Type:
                 return UnpackUInt32Exact();
             default:
                 throw new MessageTypeException();
@@ -237,20 +274,20 @@ public class BufferedUnpackerImpl : UnpackerImpl
         {
             return (sbyte)b;
         }
-        switch (b & 0xff)
+        switch (b)
         {
-            case 0xcc:
+            case UInt8Type:
                 return UnpackUInt8Exact();
-            case 0xcd:
+            case UInt16Type:
                 return UnpackUInt16Exact();
-            case 0xce:
+            case UInt32Type:
                 // FIXME overflow check
                 return (int)UnpackUInt32Exact();
-            case 0xd0:
+            case Int8Type:
                 return UnpackInt8Exact();
-            case 0xd1:
+            case Int16Type:
                 return UnpackInt16Exact();
-            case 0xd2:
+            case Int32Type:
                 return UnpackInt32Exact();
             default:
                 throw new MessageTypeException();
@@ -265,11 +302,11 @@ public class BufferedUnpackerImpl : UnpackerImpl
         {
             return b;
         }
-        switch (b & 0xff)
+        switch (b)
         {
-            case 0xcc:
+            case UInt8Type:
                 return UnpackUInt8Exact();
-            case 0xcd:
+            case UInt16Type:
                 return UnpackUInt16Exact();
             default:
                 throw new MessageTypeException();
@@ -288,16 +325,16 @@ public class BufferedUnpackerImpl : UnpackerImpl
         {
             return (sbyte)b;
         }
-        switch (b & 0xff)
+        switch (b)
         {
-            case 0xcc:
+            case UInt8Type:
                 return UnpackUInt8Exact();
-            case 0xcd:
+            case UInt16Type:
                 // FIXME overflow check
                 return (short)UnpackUInt16Exact();
-            case 0xd0:
+            case Int8Type:
                 return UnpackInt8Exact();
-            case 0xd1:
+            case Int16Type:
                 return UnpackInt16Exact();
             default:
                 throw new MessageTypeException();
@@ -312,9 +349,9 @@ public class BufferedUnpackerImpl : UnpackerImpl
         {
             return b;
         }
-        switch (b & 0xff)
+        switch (b)
         {
-            case 0xcc:
+            case UInt8Type:
                 return UnpackUInt8Exact();
             default:
                 throw new MessageTypeException();
@@ -333,21 +370,86 @@ public class BufferedUnpackerImpl : UnpackerImpl
         {
             return (sbyte)b;
         }
-        switch (b & 0xff)
+        switch (b)
         {
-            case 0xcc:
+            case UInt8Type:
                 // FIXME overflow check
                 return (sbyte)UnpackUInt8Exact();
-            case 0xd0:
+            case Int8Type:
                 return UnpackInt8Exact();
             default:
                 throw new MessageTypeException();
         }
     }
 
+    internal bool TryUnpackObject(out object result)
+    {
+        result = null;
+        if (!TryMore(1))
+        {
+            return false;
+        }
+        byte b = buffer[offset];
+
+        if (TryUnpackPositiveFixnum(b))
+        {
+            result = b;
+        }
+        else if (TryUnpackNegativeFixnum(b))
+        {
+            result = (sbyte)b;
+        }
+        else switch (b)
+        {
+            case NilType:
+                result = UnpackNullExact();
+                break;
+            case BoolTrueType:
+                result = UnpackTrueExact();
+                break;
+            case BoolFalseType:
+                result = UnpackFalseExact();
+                break;
+            case DoubleType:
+                result = UnpackDoubleExact();
+                break;
+            case FloatType:
+                result = UnpackFloatExact();
+                break;
+            case UInt64Type:
+                result = UnpackUInt64Exact();
+                break;
+            case Int64Type:
+                result = UnpackInt64Exact();
+                break;
+            case UInt32Type:
+                result = UnpackUInt32Exact();
+                break;
+            case Int32Type:
+                result = UnpackInt32Exact();
+                break;
+            case UInt16Type:
+                result = UnpackUInt16Exact();
+                break;
+            case Int16Type:
+                result = UnpackInt16Exact();
+                break;
+            case UInt8Type:
+                result = UnpackUInt8Exact();
+                break;
+            case Int8Type:
+                result = UnpackInt8Exact();
+                break;
+
+            default:
+                throw new MessageTypeException();
+        }
+        return true;
+    }
+
     private bool TryUnpackPositiveFixnum(byte b)
     {
-        if ((b & 0x80) == 0) // positive fixnum
+        if (IsPositiveFixnum(b))
         {
             Advance(1);
             return true;
@@ -355,14 +457,24 @@ public class BufferedUnpackerImpl : UnpackerImpl
         return false;
     }
 
+    private static bool IsPositiveFixnum(byte b)
+    {
+        return (b & 0x80) == 0;
+    }
+
     private bool TryUnpackNegativeFixnum(byte b)
     {
-        if ((b & 0xe0) == 0xe0) // negative fixnum
+        if (IsNegativeFixnum(b))
         {
             Advance(1);
             return true;
         }
         return false;
+    }
+
+    private static bool IsNegativeFixnum(byte b)
+    {
+        return (b & 0xe0) == 0xe0;
     }
 
     private sbyte UnpackInt8Exact()

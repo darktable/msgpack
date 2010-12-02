@@ -128,6 +128,21 @@ public class Unpacker
         return val;
     }
 
+    public object UnpackObject()
+    {
+        object result;
+        if (!TryUnpackObject(out result))
+        {
+            throw new UnpackException("Not enough data in stream.");
+        }
+        return result;
+    }
+
+    public bool TryUnpackObject(out object result)
+    {
+        return impl.TryUnpackObject(out result);
+    }
+
     public void BufferConsumed(int size)
     {
         impl.filled += size;
