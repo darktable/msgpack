@@ -4,3 +4,4 @@
 *.suo
 _ReSharper.*
 *.sln.cache
+output/

@@ -1,0 +1,56 @@
+<?xml version="1.0"?>
+<project 
+	name="msgpack build" 
+	default="BuildAndTest" 	
+>
+
+	<property name="build.configuration" value="Release"/>
+  <property name="build.platform" value="Any CPU"/>
+
+	<property name="src.dir" value="./"/>
+  <property name="solution.file" value="${src.dir}/msgpack.sln"/>
+  
+  <property name="output.dir" value="output"/>
+  
+  <property name="xbuild.exe" value="xbuild"/>
+	
+  <!-- ************************************************************************************ -->	
+
+	<target name="BuildAndTest" depends="Clean, Compile, Test, Copy"/>
+	
+  <!-- ************************************************************************************ -->	
+	
+	<target name="Clean">
+	  <delete dir="${output.dir}"/>
+    <delete>
+      <fileset>
+        <include name="${src.dir}/src/bin/**" />
+        <include name="${src.dir}/src/obj/**" />
+      </fileset>
+    </delete>
+  </target>
+  
+  <!-- ************************************************************************************ -->
+
+  <target name="Compile">
+    <exec
+      program="${xbuild.exe}"
+      commandline='${solution.file} /target:Rebuild /property:Configuration="${build.configuration}";Platform="${build.platform}"' />
+  </target>
+    
+  <!-- *********************************************************************************************************** -->
+  
+  <target name="Test">
+	</target>
+	
+  <!-- ************************************************************************************ -->
+  
+  <target name="Copy">
+    <copy todir="${output.dir}" flatten="true">
+      <fileset>
+        <include name="${src.dir}/src/bin/${build.configuration}/*.dll"/>
+      </fileset>
+    </copy>
+  </target>
+
+</project>
