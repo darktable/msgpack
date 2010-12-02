@@ -339,9 +339,16 @@ public class Packer
         return PackInt(Convert.ToInt32(e));
     }
 
-    public Packer Pack<TValue>(TValue val) where TValue : IMessagePackable
+    public Packer Pack<TValue>(TValue val) where TValue : class, IMessagePackable
     {
-        val.ToMsgPack(this);
+        if (val == null)
+        {
+            PackNull();
+        }
+        else
+        {
+            val.ToMsgPack(this);
+        }
         return this;
     }
 

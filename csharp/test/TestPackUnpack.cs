@@ -347,6 +347,11 @@ namespace MsgPack.Test
         [Test]
         public void TestMessagePackable()
         {
+            TestValue(
+                null,
+                (packer, val) => packer.Pack(val),
+                unpacker => unpacker.Unpack<DataClass>());
+
             Repeat(
                 1000,
                 rand =>
