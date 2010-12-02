@@ -131,43 +131,68 @@ public class BufferedUnpackerImpl : UnpackerImpl
         {
             return null;
         }
-        int length = UnpackRaw();
-        More(length);
         String s;
         try
         {
-            s = Encoding.UTF8.GetString(buffer, offset, length);
+            s = Encoding.UTF8.GetString(UnpackBytes());
         }
         catch (Exception e)
         {
             throw new MessageTypeException(e);
         }
-        Advance(length);
         return s;
     }
 
+    public byte[] UnpackBytes()
+    {
+        if (TryUnpackNull())
+        {
+            return null;
+        }
+        int length = UnpackRaw();
+        More(length);
+        var result = new byte[length];
+        Array.Copy(buffer, offset, result, 0, length);
+        Advance(length);
+        return result;
+    }
+
     internal int UnpackRaw()
+    {
+        int length;
+        if (TryUnpackRaw(out length))
+        {
+            return length;
+        }
+        throw new MessageTypeException();
+    }
+
+    internal bool TryUnpackRaw(out int length)
     {
         More(1);
         byte b = buffer[offset];
         if (IsFixRawType(b))  
         {
-            return UnpackFixRawLengthExact(b);
-        }
-        switch (b)
+            length = UnpackFixRawLengthExact(b);
+        } 
+        else switch (b)
         {
             case Raw16Type:
-                return UnpackUInt16Exact();
+                length = UnpackUInt16Exact();
+                break;
             case Raw32Type:
                 var v = UnpackUInt32Exact();
                 if (v > int.MaxValue)
                 {
                     throw new MessagePackOverflowException("int");
                 }
-                return (int) v;
+                length = (int) v;
+                break;
             default:
-                throw new MessageTypeException();
+                length = 0;
+                return false;
         }
+        return true;
     }
 
     private int UnpackFixRawLengthExact(byte b)
@@ -414,7 +439,7 @@ public class BufferedUnpackerImpl : UnpackerImpl
             return false;
         }
         byte b = buffer[offset];
-
+        int rawLength;
         if (TryUnpackPositiveFixnum(b))
         {
             result = b;
@@ -422,6 +447,10 @@ public class BufferedUnpackerImpl : UnpackerImpl
         else if (TryUnpackNegativeFixnum(b))
         {
             result = (sbyte)b;
+        }
+        else if (TryUnpackRaw(out rawLength))
+        {
+            result = UnpackRawBody(rawLength);
         }
         else switch (b)
         {

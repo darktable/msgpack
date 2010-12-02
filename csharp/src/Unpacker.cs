@@ -71,6 +71,11 @@ public class Unpacker
         return impl.UnpackString();
     }
 
+    public byte[] UnpackBytes()
+    {
+        return impl.UnpackBytes();
+    }
+
     public ulong UnpackULong()
     {
         return impl.UnpackULong();

@@ -307,6 +307,34 @@ namespace MsgPack.Test
         }
 
         [Test]
+        public void TestBytes()
+        {
+            TestBytes(null);
+            TestBytes(new byte[0]);
+
+            var rand = new Random(0);
+            TestBytes(GetBytes(rand, 10));
+            TestBytes(GetBytes(rand, 31));
+            TestBytes(GetBytes(rand, ushort.MaxValue));
+            TestBytes(GetBytes(rand, ushort.MaxValue + 1000));
+        }
+
+        private static byte[] GetBytes(Random rand, int length)
+        {
+            var bytes = new byte[length];
+            rand.NextBytes(bytes);
+            return bytes;
+        }
+
+        private static void TestBytes(byte[] val)
+        {
+            TestValue(
+                val,
+                (packer, v) => packer.PackBytes(v),
+                unpacker => unpacker.UnpackBytes());
+        }
+
+        [Test]
         public void TestChar()
         {
             TestChar(char.MaxValue);
@@ -420,13 +448,18 @@ namespace MsgPack.Test
             TestObject(1);
             TestObject(-1);
 
+            TestObject(GetBytes(new Random(0), 0));
+            TestObject(GetBytes(new Random(0), 1));
+            TestObject(GetBytes(new Random(0), 31));
+            TestObject(GetBytes(new Random(0), 12345));
+
             TestObject(SomeEnum.C, (expected, actual) => Assert.AreEqual((int) expected, actual));
             TestObject('z', (expected, actual) => Assert.AreEqual((int) (char) expected, actual));
             
             TestObject(new DataClass {Bool = true},
                        (expected, actual) => Assert.AreEqual(((DataClass) expected).Bool, actual));
 
-            //TestObject("str", (expected, actual) => Assert.AreEqual(Encoding.UTF8.GetBytes((string)expected), actual));
+            TestObject("str", (expected, actual) => Assert.AreEqual(Encoding.UTF8.GetBytes((string)expected), actual));
         }
 
         private static void TestObject(object val, Action<object, object> equalityAssert = null)

@@ -43,6 +43,7 @@ public class Packer
         packerCallbacks[typeof(sbyte)] = val => PackSByte((sbyte) val);
         packerCallbacks[typeof(char)] = val => PackChar((char) val);
         packerCallbacks[typeof(string)] = val => PackString((string) val);
+        packerCallbacks[typeof(byte[])] = val => PackBytes((byte[]) val);
     }
 
     public Packer PackTrue()
@@ -88,9 +89,7 @@ public class Packer
         {
             return PackNull();
         }
-
-        byte[] b = Encoding.UTF8.GetBytes(s);
-        return PackRaw(b.Length).PackRawBody(b);
+        return PackBytes(Encoding.UTF8.GetBytes(s));
     }
 
     public Packer PackRaw(int n)
@@ -122,6 +121,20 @@ public class Packer
     public Packer PackRawBody(byte[] b, int off, int length)
     {
         writer.Write(b, off, length);
+        return this;
+    }
+
+    public Packer PackBytes(byte[] bytes)
+    {
+        if (bytes == null)
+        {
+            PackNull();
+        }
+        else
+        {
+            PackRaw(bytes.Length);
+            PackRawBody(bytes);
+        }
         return this;
     }
 
