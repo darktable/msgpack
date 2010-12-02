@@ -90,7 +90,7 @@ public class BufferedUnpackerImpl : UnpackerImpl
     internal float UnpackFloat()
     {
         var d = UnpackDouble();
-        if (d < float.MinValue || d > float.MaxValue)
+        if ((d < float.MinValue || d > float.MaxValue) && !double.IsInfinity(d))
         {
             throw new MessagePackOverflowException("float");
         }
