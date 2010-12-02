@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using NUnit.Framework;
 
@@ -75,7 +72,7 @@ namespace MsgPack.Test
         [Test]
         public void TestNull()
         {
-            TestValue(
+            TestValue<object, object>(
                 null,
                 (packer, v) => packer.PackNull(),
                 unpacker => unpacker.UnpackNull());
@@ -345,9 +342,45 @@ namespace MsgPack.Test
         }
 
         [Test]
+        public void TestOverflows()
+        {
+            Assert.Throws(
+                typeof (MessagePackOverflowException),
+                () => TestValue(
+                    double.MaxValue,
+                    (packer, v) => packer.PackDouble(v),
+                    unpacker => unpacker.UnpackFloat()));
+            Assert.Throws(
+                typeof (MessagePackOverflowException),
+                () => TestValue(
+                    ulong.MaxValue,
+                    (packer, v) => packer.PackULong(v),
+                    unpacker => unpacker.UnpackLong()));
+            Assert.Throws(
+                typeof (MessagePackOverflowException),
+                () => TestValue(
+                    uint.MaxValue,
+                    (packer, v) => packer.PackUInt(v),
+                    unpacker => unpacker.UnpackInt()));
+            Assert.Throws(
+                typeof (MessagePackOverflowException),
+                () => TestValue(
+                    ushort.MaxValue,
+                    (packer, v) => packer.PackUShort(v),
+                    unpacker => unpacker.UnpackShort()));
+            Assert.Throws(
+                typeof (MessagePackOverflowException),
+                () => TestValue(
+                    byte.MaxValue,
+                    (packer, v) => packer.PackByte(v),
+                    unpacker => unpacker.UnpackSByte()));
+        }
+
+
+        [Test]
         public void TestMessagePackable()
         {
-            TestValue(
+            TestValue<DataClass, DataClass>(
                 null,
                 (packer, val) => packer.Pack(val),
                 unpacker => unpacker.Unpack<DataClass>());
@@ -405,7 +438,7 @@ namespace MsgPack.Test
                 equalityAssert);
         }
 
-        private static void TestValue<T>(T val, Action<Packer, T> pack, Func<Unpacker, T> unpack,
+        private static void TestValue<T1, T2>(T1 val, Action<Packer, T1> pack, Func<Unpacker, T2> unpack,
                                          Action<object, object> equalityAssert = null)
         {
             var stream = new MemoryStream();

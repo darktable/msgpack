@@ -1,6 +1,4 @@
-﻿using System.IO;
-
-public class UnpackException : IOException
+﻿public class UnpackException : MessagePackException
 {
     public UnpackException(string message) : base(message)
     {

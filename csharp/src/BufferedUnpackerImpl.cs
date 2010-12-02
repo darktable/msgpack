@@ -89,8 +89,12 @@ public class BufferedUnpackerImpl : UnpackerImpl
 
     internal float UnpackFloat()
     {
-        // FIXME overflow check
-        return (float) UnpackDouble();
+        var d = UnpackDouble();
+        if (d < float.MinValue || d > float.MaxValue)
+        {
+            throw new MessagePackOverflowException("float");
+        }
+        return (float) d;
     }
 
     internal double UnpackDouble()
@@ -155,8 +159,12 @@ public class BufferedUnpackerImpl : UnpackerImpl
             case Raw16Type:
                 return UnpackUInt16Exact();
             case Raw32Type:
-                // FIXME overflow check
-                return (int) UnpackUInt32Exact();
+                var v = UnpackUInt32Exact();
+                if (v > int.MaxValue)
+                {
+                    throw new MessagePackOverflowException("int");
+                }
+                return (int) v;
             default:
                 throw new MessageTypeException();
         }
@@ -226,8 +234,12 @@ public class BufferedUnpackerImpl : UnpackerImpl
             case UInt32Type:
                 return UnpackUInt32Exact();
             case UInt64Type:
-                // FIXME overflow check
-                return (long)UnpackUInt64Exact();
+                var v = UnpackUInt64Exact();
+                if (v > long.MaxValue)
+                {
+                    throw new MessagePackOverflowException("long");
+                }
+                return (long)v;
             case Int8Type:
                 return UnpackInt8Exact();
             case Int16Type: 
@@ -281,8 +293,12 @@ public class BufferedUnpackerImpl : UnpackerImpl
             case UInt16Type:
                 return UnpackUInt16Exact();
             case UInt32Type:
-                // FIXME overflow check
-                return (int)UnpackUInt32Exact();
+                var v = UnpackUInt32Exact();
+                if (v > int.MaxValue)
+                {
+                    throw new MessagePackOverflowException("int");
+                }
+                return (int)v;
             case Int8Type:
                 return UnpackInt8Exact();
             case Int16Type:
@@ -330,8 +346,12 @@ public class BufferedUnpackerImpl : UnpackerImpl
             case UInt8Type:
                 return UnpackUInt8Exact();
             case UInt16Type:
-                // FIXME overflow check
-                return (short)UnpackUInt16Exact();
+                var v = UnpackUInt16Exact();
+                if (v > short.MaxValue)
+                {
+                    throw new MessagePackOverflowException("short");
+                }
+                return (short)v;
             case Int8Type:
                 return UnpackInt8Exact();
             case Int16Type:
@@ -373,8 +393,12 @@ public class BufferedUnpackerImpl : UnpackerImpl
         switch (b)
         {
             case UInt8Type:
-                // FIXME overflow check
-                return (sbyte)UnpackUInt8Exact();
+                var v = UnpackUInt8Exact();
+                if (v > sbyte.MaxValue)
+                {
+                    throw new MessagePackOverflowException("sbyte");
+                }
+                return (sbyte)v;
             case Int8Type:
                 return UnpackInt8Exact();
             default:
@@ -542,8 +566,7 @@ public class BufferedUnpackerImpl : UnpackerImpl
     {
         if (!TryMore(require))
         {
-            // FIXME
-            throw new UnpackException("insufficient buffer");
+            throw new UnpackException("Insufficient buffer");
         }
     }
 

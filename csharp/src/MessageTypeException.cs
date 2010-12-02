@@ -1,21 +1,18 @@
 ﻿using System;
 
-public class MessageTypeException: Exception
+public class MessageTypeException: MessagePackException
 {
     public MessageTypeException()
+        : base("Type error.")
     {
     }
 
     public MessageTypeException(Exception innerException)
-        : base("type error", innerException)
+        : base("Type error", innerException)
     {
     }
 
     public MessageTypeException(string message) : base(message)
-    {
-    }
-
-    public MessageTypeException(string message, Exception innerException) : base(message, innerException)
     {
     }
 }

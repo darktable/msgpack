@@ -381,7 +381,7 @@ public class Packer
             }
             else
             {
-                throw new MessageTypeException(string.Format("Cannot pack object of type {0}", type.FullName));
+                throw new MessagePackException(string.Format("Cannot pack object of type {0}", type.FullName));
             }
         }
         return this;
