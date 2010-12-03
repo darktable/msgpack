@@ -465,6 +465,8 @@ namespace MsgPack.Test
 
             TestObject(new [] {1, 2, 3});
             TestObject(new List<double> { 123.45, double.MaxValue, double.NegativeInfinity, 0.0, -0.0 });
+            TestObject(new Dictionary<int, bool> {{1, false}, {int.MaxValue, true}, {4, true}},
+                       (expected, actual) => AssertDictionariesEqual((IDictionary) expected, (IDictionary) actual));
         }
 
         private static void TestObject(object val, Action<object, object> equalityAssert = null)
@@ -523,11 +525,7 @@ namespace MsgPack.Test
                 new Dictionary<int, bool> {{1, false}, {int.MaxValue, true}, {4, true}},
                 (packer, dic) => packer.PackDictionary(dic),
                 unpacker => unpacker.UnpackDictionary(), 
-                (expected, actual) =>
-                    {
-                        Assert.AreEqual(expected.Keys, actual.Keys);
-                        Assert.AreEqual(expected.Values, actual.Values);
-                    });
+                AssertDictionariesEqual);
 
             TestValue(
                 new Dictionary<string, DataClass>
@@ -546,6 +544,12 @@ namespace MsgPack.Test
                         }
                         return dict;
                     });
+        }
+
+        private static void AssertDictionariesEqual(IDictionary expected, IDictionary actual)
+        {
+            Assert.AreEqual(expected.Keys, actual.Keys);
+            Assert.AreEqual(expected.Count, actual.Count);
         }
 
         private static void TestValue<T1, T2>(T1 val, Action<Packer, T1> pack, Func<Unpacker, T2> unpack,

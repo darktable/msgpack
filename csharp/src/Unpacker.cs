@@ -297,6 +297,7 @@ public class Unpacker
     {
         int rawLength;
         int arrayLength;
+        int mapLength;
         if (TryUnpackRaw(out rawLength))
         {
             return UnpackRawBody(rawLength);
@@ -304,6 +305,10 @@ public class Unpacker
         if (TryUnpackArray(out arrayLength))
         {
             return UnpackObjectListBody(arrayLength);
+        }
+        if (TryUnpackMap(out mapLength))
+        {
+            return UnpackDictionaryBody(mapLength);
         }
 
         byte b = reader.ReadByte();
@@ -421,6 +426,11 @@ public class Unpacker
             return null;
         }
         var length = UnpackMap();
+        return UnpackDictionaryBody(length);
+    }
+
+    private Dictionary<object, object> UnpackDictionaryBody(int length)
+    {
         var dict = new Dictionary<object, object>();
         for (int i = 0; i < length; i++)
         {

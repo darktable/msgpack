@@ -396,6 +396,10 @@ public class Packer
         {
             callback = v => Pack((IMessagePackable)v);
         }
+        else if (typeof(IDictionary).IsAssignableFrom(type))
+        {
+            callback = v => PackDictionary((IDictionary)v);
+        }
         else if (typeof(ICollection).IsAssignableFrom(type))
         {
             callback = v => PackCollection((ICollection)v);
