@@ -22,31 +22,21 @@ import java.io.IOException;
 import org.msgpack.*;
 
 public class ByteBufferTemplate implements Template {
-	private ByteBufferTemplate() { }
+	private ByteBufferTemplate() {
+	}
 
 	public void pack(Packer pk, Object target) throws IOException {
-		byte[] bytes = byteBufferToByteArray((ByteBuffer)target);
-		pk.packByteArray(bytes);
+		pk.pack((ByteBuffer) target);
 	}
 
-	private static byte[] byteBufferToByteArray(ByteBuffer b) {
-		if (b.hasArray() && b.position() == 0 && b.arrayOffset() == 0
-				&& b.remaining() == b.capacity()) {
-			return b.array();
-		} else {
-			int size = b.remaining();
-			byte[] bytes = new byte[size];
-			System.arraycopy(b.array(), b.arrayOffset() + b.position(), bytes, 0, size);
-			return bytes;
-		}
+	public Object unpack(Unpacker pac, Object to) throws IOException,
+			MessageTypeException {
+		return pac.unpackByteBuffer();
 	}
 
-	public Object unpack(Unpacker pac, Object to) throws IOException, MessageTypeException {
-		byte[] bytes = pac.unpackByteArray();
-		return ByteBuffer.wrap(bytes);
-	}
-
-	public Object convert(MessagePackObject from, Object to) throws MessageTypeException {
+	public Object convert(MessagePackObject from, Object to)
+			throws MessageTypeException {
+		// FIXME
 		byte[] bytes = from.asByteArray();
 		return ByteBuffer.wrap(bytes);
 	}
@@ -61,4 +51,3 @@ public class ByteBufferTemplate implements Template {
 		TemplateRegistry.register(ByteBuffer.class, instance);
 	}
 }
-
