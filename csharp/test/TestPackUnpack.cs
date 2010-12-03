@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using NUnit.Framework;
@@ -460,6 +461,9 @@ namespace MsgPack.Test
                        (expected, actual) => Assert.AreEqual(((DataClass) expected).Bool, actual));
 
             TestObject("str", (expected, actual) => Assert.AreEqual(Encoding.UTF8.GetBytes((string)expected), actual));
+
+            TestObject(new [] {1, 2, 3});
+            TestObject(new List<double> { 123.45, double.MaxValue, double.NegativeInfinity, 0.0, -0.0 });
         }
 
         private static void TestObject(object val, Action<object, object> equalityAssert = null)
@@ -469,6 +473,24 @@ namespace MsgPack.Test
                 (packer, v) => packer.PackObject(v),
                 unpacker => unpacker.UnpackObject(),
                 equalityAssert);
+        }
+
+        [Test]
+        public void TestCollection()
+        {
+            TestValue(
+                new List<int> {1, 2, 3}, 
+                (packer, list) => packer.PackCollection(list),
+                unpacker => unpacker.UnpackObjectList());
+            TestValue(
+                new List<float> {123.45f, float.MaxValue, float.NegativeInfinity, 0.0f, -0.0f},
+                (packer, list) => packer.PackCollection(list),
+                unpacker => unpacker.UnpackObjectList());
+            TestValue(
+                new List<DataClass>
+                    {new DataClass {Bool = true}, new DataClass {Long = 123}, new DataClass {String = "qwerty"}},
+                (packer, list) => packer.PackCollection(list),
+                unpacker => unpacker.UnpackList<DataClass>());
         }
 
         private static void TestValue<T1, T2>(T1 val, Action<Packer, T1> pack, Func<Unpacker, T2> unpack,

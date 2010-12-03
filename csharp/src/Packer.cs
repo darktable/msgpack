@@ -1,20 +1,11 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
 public class Packer
 {
-    private const byte MaxFixnum = (1 << 7) - 1;
-    private const sbyte MinFixnum = -(1 << 5);
-    private const uint MaxUInt8 = (1 << 8) - 1;
-    private const ulong MaxUInt16 = (1L << 16) - 1;
-    private const ulong MaxUInt32 = (1L << 32) - 1;
-    private const int MaxFixRawLength = 31;
-    private const int MaxRaw16Length = 65535;
-    private const long MinInt32 = -(1L<<31);
-    private const int MinInt8 = -(1<<7);
-
     private readonly BinaryWriter writer;
 
     private Dictionary<Type, Action<object>> packerCallbacks;
@@ -24,7 +15,6 @@ public class Packer
         writer = new BinaryWriter(stream);
         InitPackerCallbacks();
     }
-
 
     private void InitPackerCallbacks()
     {
@@ -48,13 +38,13 @@ public class Packer
 
     public Packer PackTrue()
     {
-        writer.Write((byte) 0xc3);
+        writer.Write(MsgPack.BoolTrueType);
         return this;
     }
 
     public Packer PackFalse()
     {
-        writer.Write((byte) 0xc2);
+        writer.Write(MsgPack.BoolFalseType);
         return this;
     }
 
@@ -65,20 +55,20 @@ public class Packer
 
     public Packer PackNull()
     {
-        writer.Write((byte) 0xc0);
+        writer.Write(MsgPack.NilType);
         return this;
     }
 
     public Packer PackFloat(float f)
     {
-        writer.Write((byte) 0xca);
+        writer.Write(MsgPack.FloatType);
         writer.Write(f);
         return this;
     }
 
     public Packer PackDouble(double d)
     {
-        writer.Write((byte) 0xcb);
+        writer.Write(MsgPack.DoubleType);
         writer.Write(d);
         return this;
     }
@@ -94,19 +84,19 @@ public class Packer
 
     public Packer PackRaw(int n)
     {
-        if (n <= MaxFixRawLength)
+        if (n <= MsgPack.MaxFixRawLength)
         {
             var b = (byte) (0xa0 | n);
             writer.Write(b);
         }
-        else if (n <= MaxRaw16Length)
+        else if (n <= MsgPack.MaxRaw16Length)
         {
-            writer.Write((byte) 0xda);
+            writer.Write(MsgPack.Raw16Type);
             writer.Write((ushort) n);
         }
         else
         {
-            writer.Write((byte) 0xdb);
+            writer.Write(MsgPack.Raw32Type);
             writer.Write(n);
         }
         return this;
@@ -140,15 +130,15 @@ public class Packer
 
     public Packer PackULong(ulong d)
     {
-        if (d <= MaxFixnum) 
+        if (d <= MsgPack.MaxFixnum) 
         {
             PackFixnumExact((sbyte)d);
         }
         else
         {
-            if (d <= MaxUInt16)
+            if (d <= MsgPack.MaxUInt16)
             {
-                if (d <= MaxUInt8)
+                if (d <= MsgPack.MaxUInt8)
                 {
                     PackUInt8Exact((byte)d);
                 }
@@ -159,7 +149,7 @@ public class Packer
             }
             else
             {
-                if (d <= MaxUInt32)
+                if (d <= MsgPack.MaxUInt32)
                 {
                     PackUInt32Exact((uint)d);
                 }
@@ -179,7 +169,7 @@ public class Packer
         {
             PackULong((ulong)d);
         }
-        else if (d >= MinFixnum)
+        else if (d >= MsgPack.MinFixnum)
         {
             PackFixnumExact((sbyte) d);
         }
@@ -187,7 +177,7 @@ public class Packer
         {
             if (d < -(1L << 15))
             {
-                if (d < MinInt32)
+                if (d < MsgPack.MinInt32)
                 {
                     PackInt64Exact(d);
                 }
@@ -198,7 +188,7 @@ public class Packer
             }
             else
             {
-                if (d < MinInt8)
+                if (d < MsgPack.MinInt8)
                 {
                     PackInt16Exact((short) d);
                 }
@@ -213,15 +203,15 @@ public class Packer
 
     public Packer PackUInt(uint d)
     {
-        if (d <= MaxFixnum)
+        if (d <= MsgPack.MaxFixnum)
         {
             PackFixnumExact((sbyte)d);
         }
         else
         {
-            if (d <= MaxUInt16)
+            if (d <= MsgPack.MaxUInt16)
             {
-                if (d <= MaxUInt8)
+                if (d <= MsgPack.MaxUInt8)
                 {
                     PackUInt8Exact((byte)d);
                 }
@@ -245,7 +235,7 @@ public class Packer
         {
             PackUInt((uint)d);
         }
-        else if (d >= MinFixnum)
+        else if (d >= MsgPack.MinFixnum)
         {
             PackFixnumExact((sbyte)d);
         }
@@ -257,7 +247,7 @@ public class Packer
             }
             else
             {
-                if (d < MinInt8)
+                if (d < MsgPack.MinInt8)
                 {
                     PackInt16Exact((short)d);
                 }
@@ -272,13 +262,13 @@ public class Packer
 
     public Packer PackUShort(ushort d)
     {
-        if (d <= MaxFixnum)
+        if (d <= MsgPack.MaxFixnum)
         {
             PackFixnumExact((sbyte)d);
         }
         else
         {
-            if (d <= MaxUInt8)
+            if (d <= MsgPack.MaxUInt8)
             {
                 PackUInt8Exact((byte)d);
             }
@@ -297,13 +287,13 @@ public class Packer
         {
             PackUShort((ushort)d);
         }
-        else if (d >= MinFixnum)
+        else if (d >= MsgPack.MinFixnum)
         {
             PackFixnumExact((sbyte)d);
         }
         else
         {
-            if (d < MinInt8)
+            if (d < MsgPack.MinInt8)
             {
                 PackInt16Exact(d);
             }
@@ -317,7 +307,7 @@ public class Packer
 
     public Packer PackByte(byte d)
     {
-        if (d <= MaxFixnum)
+        if (d <= MsgPack.MaxFixnum)
         {
             PackFixnumExact((sbyte)d);
         }
@@ -331,7 +321,7 @@ public class Packer
 
     public Packer PackSByte(sbyte d)
     {
-        if (MinFixnum <= d && d <= MaxFixnum)
+        if (MsgPack.MinFixnum <= d && d <= MsgPack.MaxFixnum)
         {
             PackFixnumExact(d);
         }
@@ -367,60 +357,122 @@ public class Packer
 
     public Packer PackObject(object val)
     {
+        PackObject(val, null);
+        return this;
+    }
+
+    private void PackObject(object val, Action<object> packerCallback)
+    {
         if (val == null)
         {
             PackNull();
         }
         else
         {
-            var type = val.GetType();
-            Action<object> packerCallback;
-            if (type.IsEnum)
+            if (packerCallback == null)
             {
-                packerCallback = v=> PackEnum(v);
+                packerCallback = FindPackerCallback(val.GetType());
             }
-            else if (typeof(IMessagePackable).IsInstanceOfType(val))
-            {
-                packerCallback = v => Pack((IMessagePackable)v);
-            }
-            else
-            {
-                packerCallbacks.TryGetValue(type, out packerCallback);
-            }
+            packerCallback(val);
+        }
+    }
 
-            if (packerCallback != null)
-            {
-                packerCallback(val);
-            }
-            else
-            {
-                throw new MessagePackException(string.Format("Cannot pack object of type {0}", type.FullName));
-            }
+    private Action<object> FindPackerCallback(Type type)
+    {
+        Action<object> callback;
+        if (!TryFindPackerCallback(type, out callback))
+        {
+            throw new MessagePackException(string.Format("Cannot pack object of type {0}", type.FullName));
+        }
+        return callback;
+    }
+
+    private bool TryFindPackerCallback(Type type, out Action<object> callback)
+    {
+        if (type.IsEnum)
+        {
+            callback = v => PackEnum(v);
+        }
+        else if (typeof(IMessagePackable).IsAssignableFrom(type))
+        {
+            callback = v => Pack((IMessagePackable)v);
+        }
+        else if (typeof(ICollection).IsAssignableFrom(type))
+        {
+            callback = v => PackCollection((ICollection)v);
+        }
+        else
+        {
+            packerCallbacks.TryGetValue(type, out callback);
+        }
+        return callback != null;
+    }
+
+    private Packer PackCollection(ICollection values)
+    {
+        return values == null ? PackNull() : PackCollection(values, values.Count, null);
+    }
+
+    public Packer PackCollection<T>(ICollection<T> values)
+    {
+        return values == null ? PackNull() : PackCollection(values, values.Count, FindPackerCallback(typeof (T)));
+    }
+
+    private Packer PackCollection(IEnumerable values, int count, Action<object> packerCallback)
+    {
+        if (values == null)
+        {
+            return PackNull();
+        }
+        PackArray(count);
+        foreach (var value in values)
+        {
+            PackObject(value, packerCallback);
+        }
+        return this;
+    }
+
+    public Packer PackArray(int n)
+    {
+        if (n <= MsgPack.MaxFixArrayLength)
+        {
+            var d = (byte) (0x90 | n);
+            writer.Write(d);
+        }
+        else if (n <= MsgPack.MaxArray16Length)
+        {
+            writer.Write(MsgPack.Array16Type);
+            writer.Write((ushort) n);
+        }
+        else
+        {
+            writer.Write(MsgPack.Array32Type);
+            writer.Write(n);
         }
         return this;
     }
 
     private void PackInt8Exact(sbyte d)
     {
-        writer.Write((byte)0xd0);
+        writer.Write(MsgPack.Int8Type);
         writer.Write(d);
     }
 
     private void PackInt16Exact(short d)
     {
-        writer.Write((byte)0xd1);
+        writer.Write(MsgPack.Int16Type);
         writer.Write(d);
     }
 
     private void PackInt32Exact(int d)
     {
-        writer.Write((byte)0xd2);
+        writer.Write(MsgPack.Int32Type);
         writer.Write(d);
     }
 
     private void PackInt64Exact(long d)
     {
-        writer.Write((byte)0xd3);
+        writer.Write(MsgPack.Int64Type);
         writer.Write(d);
     }
 
@@ -431,25 +483,25 @@ public class Packer
 
     private void PackUInt8Exact(byte d)
     {
-        writer.Write((byte)0xcc);
+        writer.Write(MsgPack.UInt8Type);
         writer.Write(d);
     }
 
     private void PackUInt16Exact(ushort d)
     {
-        writer.Write((byte)0xcd);
+        writer.Write(MsgPack.UInt16Type);
         writer.Write(d);
     }
 
     private void PackUInt32Exact(uint d)
     {
-        writer.Write((byte)0xce);
+        writer.Write(MsgPack.UInt32Type);
         writer.Write(d);
     }
 
     private void PackUInt64Exact(ulong d)
     {
-        writer.Write((byte)0xcf);
+        writer.Write(MsgPack.UInt64Type);
         writer.Write(d);
     }
 }

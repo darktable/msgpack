@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 
 public class Unpacker
@@ -116,40 +117,44 @@ public class Unpacker
         return impl.UnpackSByte();
     }
 
-    public char UnpackChar()
-    {
-        return (char)impl.UnpackInt();
-    }
-
-    public T UnpackEnum<T>()
-    {
-        return (T)Enum.ToObject(typeof(T), impl.UnpackInt());
-    }
-
-    public TValue Unpack<TValue>() where TValue : class, IMessagePackable, new()
-    {
-        if (impl.TryUnpackNull())
-        {
-            return null;
-        }
-        var val = new TValue();
-        val.FromMsgPack(this);
-        return val;
-    }
-
     public object UnpackObject()
     {
-        object result;
-        if (!TryUnpackObject(out result))
-        {
-            throw new UnpackException("Not enough data in stream.");
-        }
-        return result;
+        return impl.UnpackObject();
     }
 
     public bool TryUnpackObject(out object result)
     {
         return impl.TryUnpackObject(out result);
+    }
+
+    public int UnpackArray()
+    {
+        return impl.UnpackArray();
+    }
+
+    public TValue Unpack<TValue>() where TValue : class, IMessagePackable, new()
+    {
+        return impl.Unpack<TValue>(this);
+    }
+
+    public char UnpackChar()
+    {
+        return impl.UnpackChar();
+    }
+
+    public T UnpackEnum<T>()
+    {
+        return impl.UnpackEnum<T>();
+    }
+
+    public List<object> UnpackObjectList()
+    {
+        return impl.UnpackObjectList();
+    }
+
+    public List<T> UnpackList<T>() where T : class, IMessagePackable, new()
+    {
+        return impl.UnpackList<T>(this);
     }
 
     public void BufferConsumed(int size)
