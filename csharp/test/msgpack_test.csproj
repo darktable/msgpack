@@ -39,6 +39,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TestFileReading.cs" />
     <Compile Include="TestPackUnpack.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -46,6 +47,11 @@
       <Project>{9368F537-D796-4525-99C1-5F302D9350B1}</Project>
       <Name>msgpack</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="TestFiles\test.mpac">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
