@@ -10,6 +10,22 @@ namespace MsgPack.Test
     [TestFixture]
     public class TestPackUnpack
     {
+        [Test, Ignore]
+        public void StressTest()
+        {
+            var stream = new MemoryStream();
+            var packer = new Packer(stream);
+            var unpacker = new Unpacker(stream);
+
+            packer.PackULong(ulong.MaxValue);
+
+            for (int i = 0; i < 10000000; i++)
+            {
+                stream.Seek(0, SeekOrigin.Begin);
+                unpacker.UnpackULong();
+            }
+        }
+
         [Test]
         public void TestBool()
         {
