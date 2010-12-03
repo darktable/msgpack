@@ -1,4 +1,4 @@
-﻿public static class MsgPack
+﻿internal static class MsgPack
 {
     public const byte BoolFalseType = 0xc2;
     public const byte BoolTrueType = 0xc3;
@@ -48,5 +48,15 @@
     public static bool IsNegativeFixnum(byte b)
     {
         return (b & 0xe0) == 0xe0;
+    }
+
+    public static int UnpackFixRawLength(byte b)
+    {
+        return b & 0x1f;
+    }
+
+    public static int UnpackFixArrayLength(byte b)
+    {
+        return b & 0x0f;
     }
 }

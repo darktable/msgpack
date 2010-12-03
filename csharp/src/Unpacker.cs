@@ -1,200 +1,499 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 
 public class Unpacker
 {
-    private const int DefaultBufferSize = 32*1024;
-    private readonly BufferedUnpackerImpl impl;
-    private readonly Stream stream;
-
-    protected int bufferReserveSize;
-    protected int parsed;
-
-    public Unpacker() : this(DefaultBufferSize)
-    {
-    }
-
-    public Unpacker(int bufferReserveSize) : this(null, bufferReserveSize)
-    {
-    }
+    private readonly BinaryReader reader;
 
     public Unpacker(Stream stream)
-        : this(stream, DefaultBufferSize)
     {
-    }
-
-    public Unpacker(Stream stream, int bufferReserveSize)
-    {
-        parsed = 0;
-        this.bufferReserveSize = bufferReserveSize/2;
-        this.stream = stream;
-        impl = new BufferedUnpackerImpl(
-            () =>
-                {
-                    if (stream == null)
-                    {
-                        return false;
-                    }
-                    ReserveBuffer(bufferReserveSize);
-                    int rl = this.stream.Read(impl.buffer, impl.filled, impl.buffer.Length - impl.filled);
-                    if (rl <= 0)
-                    {
-                        return false;
-                    }
-                    BufferConsumed(rl);
-                    return true;
-                });
+        reader = new BinaryReader(stream);
     }
 
     public bool UnpackBool()
     {
-        return impl.UnpackBool();
+        switch (reader.ReadByte())
+        {
+            case MsgPack.BoolFalseType:
+                return false;
+            case MsgPack.BoolTrueType:
+                return true;
+            default:
+                throw new MessageTypeException();
+        }
     }
 
     public object UnpackNull()
     {
-        return impl.UnpackNull();
+        if (reader.ReadByte() != MsgPack.NilType)
+        {
+            throw new MessageTypeException();
+        }
+        return null;
     }
 
     public float UnpackFloat()
     {
-        return impl.UnpackFloat();
+        var d = UnpackDouble();
+        if ((d < float.MinValue || d > float.MaxValue) && !double.IsInfinity(d))
+        {
+            throw new MessagePackOverflowException("float");
+        }
+        return (float)d;
     }
 
     public double UnpackDouble()
     {
-        return impl.UnpackDouble();
+        switch (reader.ReadByte())
+        {
+            case MsgPack.FloatType:
+                return reader.ReadSingle();
+            case MsgPack.DoubleType:
+                return reader.ReadDouble();
+            default:
+                throw new MessageTypeException();
+        }
     }
 
     public string UnpackString()
     {
-        return impl.UnpackString();
+        if (TryUnpackNull())
+        {
+            return null;
+        }
+        String s;
+        try
+        {
+            s = Encoding.UTF8.GetString(UnpackBytes());
+        }
+        catch (Exception e)
+        {
+            throw new MessageTypeException(e);
+        }
+        return s;
     }
 
     public byte[] UnpackBytes()
     {
-        return impl.UnpackBytes();
+        if (TryUnpackNull())
+        {
+            return null;
+        }
+        int length = UnpackRaw();
+        return UnpackRawBody(length);
     }
 
     public ulong UnpackULong()
     {
-        return impl.UnpackULong();
+        byte b = reader.ReadByte();
+        if (MsgPack.IsPositiveFixnum(b))
+        {
+            return b;
+        }
+        switch (b)
+        {
+            case MsgPack.UInt8Type:
+                return reader.ReadByte();
+            case MsgPack.UInt16Type:
+                return reader.ReadUInt16();
+            case MsgPack.UInt32Type:
+                return reader.ReadUInt32();
+            case MsgPack.UInt64Type:
+                return reader.ReadUInt64();
+            default:
+                throw new MessageTypeException();
+        }
     }
 
     public long UnpackLong()
     {
-        return impl.UnpackLong();
+        byte b = reader.ReadByte();
+        if (MsgPack.IsPositiveFixnum(b))
+        {
+            return b;
+        }
+        if (MsgPack.IsNegativeFixnum(b))
+        {
+            return (sbyte)b;
+        }
+        switch (b)
+        {
+            case MsgPack.UInt8Type:
+                return reader.ReadByte();
+            case MsgPack.UInt16Type:
+                return reader.ReadUInt16();
+            case MsgPack.UInt32Type:
+                return reader.ReadUInt32();
+            case MsgPack.UInt64Type:
+                var v = reader.ReadUInt64();
+                if (v > long.MaxValue)
+                {
+                    throw new MessagePackOverflowException("long");
+                }
+                return (long)v;
+            case MsgPack.Int8Type:
+                return (sbyte)reader.ReadByte();
+            case MsgPack.Int16Type:
+                return reader.ReadInt16();
+            case MsgPack.Int32Type:
+                return reader.ReadInt32();
+            case MsgPack.Int64Type:
+                return reader.ReadInt64();
+            default:
+                throw new MessageTypeException();
+        }
     }
 
     public uint UnpackUInt()
     {
-        return impl.UnpackUInt();
+        byte b = reader.ReadByte();
+        if (MsgPack.IsPositiveFixnum(b))
+        {
+            return b;
+        }
+        switch (b)
+        {
+            case MsgPack.UInt8Type:
+                return reader.ReadByte();
+            case MsgPack.UInt16Type:
+                return reader.ReadUInt16();
+            case MsgPack.UInt32Type:
+                return reader.ReadUInt32();
+            default:
+                throw new MessageTypeException();
+        }
     }
 
     public int UnpackInt()
     {
-        return impl.UnpackInt();
+        byte b = reader.ReadByte();
+        if (MsgPack.IsPositiveFixnum(b))
+        {
+            return b;
+        }
+        if (MsgPack.IsNegativeFixnum(b))
+        {
+            return (sbyte)b;
+        }
+        switch (b)
+        {
+            case MsgPack.UInt8Type:
+                return reader.ReadByte();
+            case MsgPack.UInt16Type:
+                return reader.ReadUInt16();
+            case MsgPack.UInt32Type:
+                var v = reader.ReadUInt32();
+                if (v > int.MaxValue)
+                {
+                    throw new MessagePackOverflowException("int");
+                }
+                return (int)v;
+            case MsgPack.Int8Type:
+                return (sbyte)reader.ReadByte();
+            case MsgPack.Int16Type:
+                return reader.ReadInt16();
+            case MsgPack.Int32Type:
+                return reader.ReadInt32();
+            default:
+                throw new MessageTypeException();
+        }
     }
 
     public ushort UnpackUShort()
     {
-        return impl.UnpackUShort();
+        byte b = reader.ReadByte();
+        if (MsgPack.IsPositiveFixnum(b))
+        {
+            return b;
+        }
+        switch (b)
+        {
+            case MsgPack.UInt8Type:
+                return reader.ReadByte();
+            case MsgPack.UInt16Type:
+                return reader.ReadUInt16();
+            default:
+                throw new MessageTypeException();
+        }
     }
 
     public short UnpackShort()
     {
-        return impl.UnpackShort();
+        byte b = reader.ReadByte();
+        if (MsgPack.IsPositiveFixnum(b))
+        {
+            return b;
+        }
+        if (MsgPack.IsNegativeFixnum(b))
+        {
+            return (sbyte)b;
+        }
+        switch (b)
+        {
+            case MsgPack.UInt8Type:
+                return reader.ReadByte();
+            case MsgPack.UInt16Type:
+                var v = reader.ReadUInt16();
+                if (v > short.MaxValue)
+                {
+                    throw new MessagePackOverflowException("short");
+                }
+                return (short)v;
+            case MsgPack.Int8Type:
+                return (sbyte)reader.ReadByte();
+            case MsgPack.Int16Type:
+                return reader.ReadInt16();
+            default:
+                throw new MessageTypeException();
+        }
     }
 
     public byte UnpackByte()
     {
-        return impl.UnpackByte();
+        byte b = reader.ReadByte();
+        if (MsgPack.IsPositiveFixnum(b))
+        {
+            return b;
+        }
+        switch (b)
+        {
+            case MsgPack.UInt8Type:
+                return reader.ReadByte();
+            default:
+                throw new MessageTypeException();
+        }
     }
 
     public sbyte UnpackSByte()
     {
-        return impl.UnpackSByte();
+        byte b = reader.ReadByte();
+        if (MsgPack.IsPositiveFixnum(b))
+        {
+            return (sbyte)b;
+        }
+        if (MsgPack.IsNegativeFixnum(b))
+        {
+            return (sbyte)b;
+        }
+        switch (b)
+        {
+            case MsgPack.UInt8Type:
+                var v = reader.ReadByte();
+                if (v > sbyte.MaxValue)
+                {
+                    throw new MessagePackOverflowException("sbyte");
+                }
+                return (sbyte)v;
+            case MsgPack.Int8Type:
+                return (sbyte)reader.ReadByte();
+            default:
+                throw new MessageTypeException();
+        }
     }
 
     public object UnpackObject()
     {
-        return impl.UnpackObject();
-    }
+        int rawLength;
+        int arrayLength;
+        if (TryUnpackRaw(out rawLength))
+        {
+            return UnpackRawBody(rawLength);
+        }
+        if (TryUnpackArray(out arrayLength))
+        {
+            return UnpackObjectListBody(arrayLength);
+        }
 
-    public bool TryUnpackObject(out object result)
-    {
-        return impl.TryUnpackObject(out result);
+        byte b = reader.ReadByte();
+        if (MsgPack.IsPositiveFixnum(b))
+        {
+            return b;
+        }
+        if (MsgPack.IsNegativeFixnum(b))
+        {
+            return (sbyte)b;
+        }
+        switch (b)
+        {
+            case MsgPack.NilType:
+                return null;
+            case MsgPack.BoolTrueType:
+                return true;
+            case MsgPack.BoolFalseType:
+                return false;
+            case MsgPack.DoubleType:
+                return reader.ReadDouble();
+            case MsgPack.FloatType:
+                return reader.ReadSingle();
+            case MsgPack.UInt64Type:
+                return reader.ReadUInt64();
+            case MsgPack.Int64Type:
+                return reader.ReadInt64();
+            case MsgPack.UInt32Type:
+                return reader.ReadUInt32();
+            case MsgPack.Int32Type:
+                return reader.ReadInt32();
+            case MsgPack.UInt16Type:
+                return reader.ReadUInt16();
+            case MsgPack.Int16Type:
+                return reader.ReadInt16();
+            case MsgPack.UInt8Type:
+                return reader.ReadByte();
+            case MsgPack.Int8Type:
+                return (sbyte)reader.ReadByte();
+            default:
+                throw new MessageTypeException();
+        }
     }
 
     public int UnpackArray()
     {
-        return impl.UnpackArray();
+        int length;
+        if (TryUnpackArray(out length))
+        {
+            return length;
+        }
+        throw new MessageTypeException();
     }
 
     public TValue Unpack<TValue>() where TValue : class, IMessagePackable, new()
     {
-        return impl.Unpack<TValue>(this);
+        if (TryUnpackNull())
+        {
+            return null;
+        }
+        var val = new TValue();
+        val.FromMsgPack(this);
+        return val;
     }
 
     public char UnpackChar()
     {
-        return impl.UnpackChar();
+        return (char)UnpackInt();
     }
 
     public T UnpackEnum<T>()
     {
-        return impl.UnpackEnum<T>();
+        return (T)Enum.ToObject(typeof(T), UnpackInt());
     }
 
     public List<object> UnpackObjectList()
     {
-        return impl.UnpackObjectList();
+        var length = UnpackArray();
+        return UnpackObjectListBody(length);
     }
 
     public List<T> UnpackList<T>() where T : class, IMessagePackable, new()
     {
-        return impl.UnpackList<T>(this);
+        var length = UnpackArray();
+        var list = new List<T>(length);
+        for (int i = 0; i < length; i++)
+        {
+            list.Add(Unpack<T>());
+        }
+        return list;
     }
 
-    public void BufferConsumed(int size)
+    private int UnpackRaw()
     {
-        impl.filled += size;
+        int length;
+        if (TryUnpackRaw(out length))
+        {
+            return length;
+        }
+        throw new MessageTypeException();
     }
 
-    public void ReserveBuffer(int require)
+    private bool TryUnpackRaw(out int length)
     {
-        if (impl.buffer == null)
+        byte b = reader.ReadByte();
+        if (MsgPack.IsFixRawType(b))
         {
-            int nextSize1 = (bufferReserveSize < require) ? require : bufferReserveSize;
-            impl.buffer = new byte[nextSize1];
-            return;
+            length = MsgPack.UnpackFixRawLength(b);
         }
-
-        if (impl.filled <= impl.offset)
+        else switch (b)
         {
-            // rewind the buffer
-            impl.filled = 0;
-            impl.offset = 0;
+            case MsgPack.Raw16Type:
+                length = reader.ReadUInt16();
+                break;
+            case MsgPack.Raw32Type:
+                var v = reader.ReadUInt32();
+                if (v > int.MaxValue)
+                {
+                    throw new MessagePackOverflowException("int");
+                }
+                length = (int)v;
+                break;
+            default:
+                GotoBack();
+                length = 0;
+                return false;
         }
+        return true;
+    }
 
-        if (impl.buffer.Length - impl.filled >= require)
+    private byte[] UnpackRawBody(int length)
+    {
+        var bytes = reader.ReadBytes(length);
+        if (bytes.Length < length)
         {
-            return;
+            throw new EndOfStreamException();
         }
+        return bytes;
+    }
 
-        int nextSize = impl.buffer.Length*2;
-        int notParsed = impl.filled - impl.offset;
-        while (nextSize < require + notParsed)
+    private bool TryUnpackArray(out int length)
+    {
+        byte b = reader.ReadByte();
+        if (MsgPack.IsFixArrayType(b))
         {
-            nextSize *= 2;
+            length = MsgPack.UnpackFixArrayLength(b);
         }
+        else switch (b)
+        {
+            case MsgPack.Array16Type:
+                length = reader.ReadUInt16();
+                break;
+            case MsgPack.Array32Type:
+                var v = reader.ReadUInt32();
+                if (v > int.MaxValue)
+                {
+                    throw new MessagePackOverflowException("int");
+                }
+                length = (int)v;
+                break;
+            default:
+                GotoBack();
+                length = 0;
+                return false;
+        }
+        return true;
+    }
 
-        var tmp = new byte[nextSize];
-        Array.Copy(impl.buffer, impl.offset, tmp, 0, impl.filled - impl.offset);
+    private List<object> UnpackObjectListBody(int length)
+    {
+        var list = new List<object>(length);
+        for (int i = 0; i < length; i++)
+        {
+            list.Add(UnpackObject());
+        }
+        return list;
+    }
 
-        impl.buffer = tmp;
-        impl.filled = notParsed;
-        impl.offset = 0;
+    private bool TryUnpackNull()
+    {
+        if (reader.ReadByte() != MsgPack.NilType)
+        {
+            GotoBack();
+            return false;
+        }
+        return true;
+    }
+
+    private void GotoBack()
+    {
+        reader.BaseStream.Seek(-1, SeekOrigin.Current);
     }
 }
