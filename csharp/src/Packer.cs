@@ -6,13 +6,13 @@ using System.Text;
 
 public class Packer
 {
-    private readonly BinaryWriter writer;
+    private readonly BinaryWriterBigEndian writer;
 
     private Dictionary<Type, Action<object>> packerCallbacks;
 
     public Packer(Stream stream)
     {
-        writer = new BinaryWriter(stream);
+        writer = new BinaryWriterBigEndian(stream);
         InitPackerCallbacks();
     }
 
@@ -523,8 +523,7 @@ public class Packer
 
     private void PackUInt16Exact(ushort d)
     {
-        writer.Write(MsgPack.UInt16Type);
-        writer.Write(d);
+        writer.Write(MsgPack.UInt16Type);writer.Write(d);
     }
 
     private void PackUInt32Exact(uint d)
@@ -537,5 +536,13 @@ public class Packer
     {
         writer.Write(MsgPack.UInt64Type);
         writer.Write(d);
+    }
+}
+
+class MyBinaryWriter: BinaryWriter
+{
+    public override void Write(long l)
+    {
+        
     }
 }

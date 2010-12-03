@@ -5,11 +5,11 @@ using System.Text;
 
 public class Unpacker
 {
-    private readonly BinaryReader reader;
+    private readonly BinaryReaderBigEndian reader;
 
     public Unpacker(Stream stream)
     {
-        reader = new BinaryReader(stream);
+        reader = new BinaryReaderBigEndian(stream);
     }
 
     public bool UnpackBool()
