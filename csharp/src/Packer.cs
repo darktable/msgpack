@@ -86,8 +86,7 @@ public class Packer
     {
         if (n <= MsgPack.MaxFixRawLength)
         {
-            var b = (byte) (0xa0 | n);
-            writer.Write(b);
+            writer.Write(MsgPack.PackFixRawLength(n));
         }
         else if (n <= MsgPack.MaxRaw16Length)
         {
@@ -432,12 +431,26 @@ public class Packer
         return this;
     }
 
-    public Packer PackArray(int n)
+    public Packer PackDictionary(IDictionary dict)
+    {
+        if (dict == null)
+        {
+            return PackNull();
+        }
+        PackMap(dict.Count);
+        foreach (var key in dict.Keys)
+        {
+            PackObject(key);
+            PackObject(dict[key]);
+        }
+        return this;
+    }
+
+    private void PackArray(int n)
     {
         if (n <= MsgPack.MaxFixArrayLength)
         {
-            var d = (byte) (0x90 | n);
-            writer.Write(d);
+            writer.Write(MsgPack.PackFixArayLength(n));
         }
         else if (n <= MsgPack.MaxArray16Length)
         {
@@ -449,7 +462,24 @@ public class Packer
             writer.Write(MsgPack.Array32Type);
             writer.Write(n);
         }
-        return this;
+    }
+
+    private void PackMap(int n)
+    {
+        if (n <= MsgPack.MaxFixMapLength)
+        {
+            writer.Write(MsgPack.PackFixMapLength(n));
+        }
+        else if (n <= MsgPack.MaxMap16Length)
+        {
+            writer.Write(MsgPack.Map16Type);
+            writer.Write((ushort)n);
+        }
+        else
+        {
+            writer.Write(MsgPack.Map32Type);
+            writer.Write(n);
+        }
     }
 
     private void PackInt8Exact(sbyte d)

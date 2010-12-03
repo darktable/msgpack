@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -478,6 +479,10 @@ namespace MsgPack.Test
         [Test]
         public void TestCollection()
         {
+            TestValue<ICollection<int>, List<object>>(
+                null,
+                (packer, list) => packer.PackCollection(list),
+                unpacker => unpacker.UnpackObjectList());
             TestValue(
                 new List<int> {1, 2, 3}, 
                 (packer, list) => packer.PackCollection(list),
@@ -491,10 +496,60 @@ namespace MsgPack.Test
                     {new DataClass {Bool = true}, new DataClass {Long = 123}, new DataClass {String = "qwerty"}},
                 (packer, list) => packer.PackCollection(list),
                 unpacker => unpacker.UnpackList<DataClass>());
+            TestValue(
+                new List<string> { "qwerty", "a", null, "" },
+                (packer, list) => packer.PackCollection(list),
+                unpacker =>
+                    {
+                        var length = unpacker.UnpackArray();
+                        var list = new List<string>(length);
+                        for (int i = 0; i < length; i++)
+                        {
+                            list.Add(unpacker.UnpackString());
+                        }
+                        return list;
+                    });
+        }
+
+        [Test]
+        public void TestDictionary()
+        {
+            TestValue<IDictionary, IDictionary<object, object>>(
+                null,
+                (packer, dic) => packer.PackDictionary(dic),
+                unpacker => unpacker.UnpackDictionary());
+
+            TestValue(
+                new Dictionary<int, bool> {{1, false}, {int.MaxValue, true}, {4, true}},
+                (packer, dic) => packer.PackDictionary(dic),
+                unpacker => unpacker.UnpackDictionary(), 
+                (expected, actual) =>
+                    {
+                        Assert.AreEqual(expected.Keys, actual.Keys);
+                        Assert.AreEqual(expected.Values, actual.Values);
+                    });
+
+            TestValue(
+                new Dictionary<string, DataClass>
+                    {
+                        {"str1", new DataClass {Bool = true, String = "qq"}},
+                        {"qwerty", new DataClass {String = "ppp", Long = long.MaxValue}}
+                    },
+                (packer, dict) => packer.PackDictionary(dict),
+                unpacker =>
+                    {
+                        int length = unpacker.UnpackMap();
+                        var dict = new Dictionary<string, DataClass>(length);
+                        for (int i = 0; i < length; i++)
+                        {
+                            dict.Add(unpacker.UnpackString(), unpacker.Unpack<DataClass>());
+                        }
+                        return dict;
+                    });
         }
 
         private static void TestValue<T1, T2>(T1 val, Action<Packer, T1> pack, Func<Unpacker, T2> unpack,
-                                         Action<object, object> equalityAssert = null)
+                                         Action<T1, T2> equalityAssert = null)
         {
             var stream = new MemoryStream();
             pack(new Packer(stream), val);

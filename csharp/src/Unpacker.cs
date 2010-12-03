@@ -358,6 +358,16 @@ public class Unpacker
         throw new MessageTypeException();
     }
 
+    public int UnpackMap()
+    {
+        int length;
+        if (TryUnpackMap(out length))
+        {
+            return length;
+        }
+        throw new MessageTypeException();
+    }
+
     public TValue Unpack<TValue>() where TValue : class, IMessagePackable, new()
     {
         if (TryUnpackNull())
@@ -381,12 +391,20 @@ public class Unpacker
 
     public List<object> UnpackObjectList()
     {
+        if (TryUnpackNull())
+        {
+            return null;
+        }
         var length = UnpackArray();
         return UnpackObjectListBody(length);
     }
 
     public List<T> UnpackList<T>() where T : class, IMessagePackable, new()
     {
+        if (TryUnpackNull())
+        {
+            return null;
+        }
         var length = UnpackArray();
         var list = new List<T>(length);
         for (int i = 0; i < length; i++)
@@ -394,6 +412,21 @@ public class Unpacker
             list.Add(Unpack<T>());
         }
         return list;
+    }
+
+    public Dictionary<object, object> UnpackDictionary()
+    {
+        if (TryUnpackNull())
+        {
+            return null;
+        }
+        var length = UnpackMap();
+        var dict = new Dictionary<object, object>();
+        for (int i = 0; i < length; i++)
+        {
+            dict.Add(UnpackObject(), UnpackObject());
+        }
+        return dict;
     }
 
     private int UnpackRaw()
@@ -457,6 +490,34 @@ public class Unpacker
                 length = reader.ReadUInt16();
                 break;
             case MsgPack.Array32Type:
+                var v = reader.ReadUInt32();
+                if (v > int.MaxValue)
+                {
+                    throw new MessagePackOverflowException("int");
+                }
+                length = (int)v;
+                break;
+            default:
+                GotoBack();
+                length = 0;
+                return false;
+        }
+        return true;
+    }
+
+    private bool TryUnpackMap(out int length)
+    {
+        byte b = reader.ReadByte();
+        if (MsgPack.IsFixMapType(b))
+        {
+            length = MsgPack.UnpackFixMapLength(b);
+        }
+        else switch (b)
+        {
+            case MsgPack.Map16Type:
+                length = reader.ReadUInt16();
+                break;
+            case MsgPack.Map32Type:
                 var v = reader.ReadUInt32();
                 if (v > int.MaxValue)
                 {
