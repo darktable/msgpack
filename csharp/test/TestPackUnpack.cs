@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using NUnit.Framework;
 
@@ -505,6 +506,14 @@ namespace MsgPack.Test
                 new List<int> {1, 2, 3}, 
                 (packer, list) => packer.PackCollection(list),
                 unpacker => unpacker.UnpackObjectList());
+            TestValue(
+                Enumerable.Range(1, 65535).ToList(),
+                (packer, list) => packer.PackCollection(list),
+                unpacker => unpacker.UnpackObjectList());
+            TestValue(
+                Enumerable.Range(1, 65536).ToList(),
+                    (packer, list) => packer.PackCollection(list),
+                    unpacker => unpacker.UnpackObjectList());
             TestValue(
                 new List<float> {123.45f, float.MaxValue, float.NegativeInfinity, 0.0f, -0.0f},
                 (packer, list) => packer.PackCollection(list),
