@@ -36,7 +36,27 @@ namespace MsgPack.Test
 
                 Assert.AreEqual(Enumerable.Range(1, 65535).ToList(), unpacker.UnpackObjectList());
                 Assert.AreEqual(Enumerable.Range(1, 66000).ToList(), unpacker.UnpackObjectList());
+
+                TestPackUnpack.AssertDictionariesEqual(
+                    new Dictionary<int, bool> {{1, true}, {10, false}, {-127, true}}, unpacker.UnpackDictionary());
+
+                TestPackUnpack.AssertDictionariesEqual(
+                    Enumerable.Range(1, 65536).ToDictionary(v => v, v => v * 2), unpacker.UnpackDictionary());
+
+                TestPackUnpack.AssertDictionariesEqual(
+                    new Dictionary<int, string> { { 1, "qwerty" }, { 2, "zxc" }, { 5, "" }, {6, null} }, UnpackDictionary(unpacker));
             }
+        }
+
+        private static Dictionary<int, string> UnpackDictionary(Unpacker unpacker)
+        {
+            int length = unpacker.UnpackMap();
+            var dict = new Dictionary<int, string>(length);
+            for (int i = 0; i < length; i++)
+            {
+                dict.Add(unpacker.UnpackInt(), unpacker.UnpackString());
+            }
+            return dict;
         }
     }
 }

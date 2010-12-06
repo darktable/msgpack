@@ -571,10 +571,10 @@ namespace MsgPack.Test
                     });
         }
 
-        private static void AssertDictionariesEqual(IDictionary expected, IDictionary actual)
+        public static void AssertDictionariesEqual(IDictionary expected, IDictionary actual)
         {
             Assert.AreEqual(expected.Keys, actual.Keys);
-            Assert.AreEqual(expected.Count, actual.Count);
+            Assert.AreEqual(expected.Values, actual.Values);
         }
 
         private static void TestValue<T1, T2>(T1 val, Action<Packer, T1> pack, Func<Unpacker, T2> unpack,

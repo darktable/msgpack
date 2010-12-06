@@ -14,4 +14,13 @@ File.open('TestFiles/test.mpac', 'wb') do |f|
 
   (1..65535).to_a.to_msgpack(f)
   (1..66000).to_a.to_msgpack(f)
+  
+  {1 => true, 10 => false, -127 => true}.to_msgpack(f)
+  
+  h = {}
+  (1..65536).each { |v| h[v] = v*2 }
+  h.to_msgpack(f)
+  
+  {1 => "qwerty", 2 => "zxc", 5 => "", 6 => nil}.to_msgpack(f)
+
 end
