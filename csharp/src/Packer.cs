@@ -36,21 +36,21 @@ public class Packer
         packerCallbacks[typeof(byte[])] = val => PackBytes((byte[]) val);
     }
 
-    public Packer PackTrue()
+    public Packer PackBool(bool d)
+    {
+        return d ? PackTrue() : PackFalse();
+    }
+
+    private Packer PackTrue()
     {
         writer.Write(MsgPack.BoolTrueType);
         return this;
     }
 
-    public Packer PackFalse()
+    private Packer PackFalse()
     {
         writer.Write(MsgPack.BoolFalseType);
         return this;
-    }
-
-    public Packer PackBool(bool d)
-    {
-        return d ? PackTrue() : PackFalse();
     }
 
     public Packer PackNull()
@@ -82,7 +82,21 @@ public class Packer
         return PackBytes(Encoding.UTF8.GetBytes(s));
     }
 
-    public Packer PackRaw(int n)
+    public Packer PackBytes(byte[] bytes)
+    {
+        if (bytes == null)
+        {
+            PackNull();
+        }
+        else
+        {
+            PackRaw(bytes.Length);
+            PackRawBody(bytes);
+        }
+        return this;
+    }
+
+    private void PackRaw(int n)
     {
         if (n <= MsgPack.MaxFixRawLength)
         {
@@ -98,33 +112,11 @@ public class Packer
             writer.Write(MsgPack.Raw32Type);
             writer.Write(n);
         }
-        return this;
     }
 
-    public Packer PackRawBody(byte[] b)
+    private void PackRawBody(byte[] b)
     {
         writer.Write(b);
-        return this;
-    }
-
-    public Packer PackRawBody(byte[] b, int off, int length)
-    {
-        writer.Write(b, off, length);
-        return this;
-    }
-
-    public Packer PackBytes(byte[] bytes)
-    {
-        if (bytes == null)
-        {
-            PackNull();
-        }
-        else
-        {
-            PackRaw(bytes.Length);
-            PackRawBody(bytes);
-        }
-        return this;
     }
 
     public Packer PackULong(ulong d)
@@ -341,6 +333,9 @@ public class Packer
         return PackInt(Convert.ToInt32(e));
     }
 
+    /// <summary>
+    /// Packs a value of type implementing IMessagePackable
+    /// </summary>
     public Packer Pack<TValue>(TValue val) where TValue : class, IMessagePackable
     {
         if (val == null)
@@ -354,6 +349,9 @@ public class Packer
         return this;
     }
 
+    /// <summary>
+    /// Packs a value of primitive type, a collection, a dictionary or a value of type implementing IMessagePackable
+    /// </summary>
     public Packer PackObject(object val)
     {
         PackObject(val, null);
@@ -398,7 +396,7 @@ public class Packer
         }
         else if (typeof(IDictionary).IsAssignableFrom(type))
         {
-            callback = v => PackDictionary((IDictionary)v);
+            callback = v => PackDictionary((IDictionary)v, null, null);
         }
         else if (typeof(ICollection).IsAssignableFrom(type))
         {
@@ -435,7 +433,7 @@ public class Packer
         return this;
     }
 
-    public Packer PackDictionary(IDictionary dict)
+    private Packer PackDictionary(IDictionary dict, Action<object> keyPackerCallback, Action<object> valuePackerCallback)
     {
         if (dict == null)
         {
@@ -444,10 +442,25 @@ public class Packer
         PackMap(dict.Count);
         foreach (var key in dict.Keys)
         {
-            PackObject(key);
-            PackObject(dict[key]);
+            PackObject(key, keyPackerCallback);
+            PackObject(dict[key], valuePackerCallback);
         }
         return this;
+    }
+
+    public Packer PackDictionary(IDictionary dict)
+    {
+        return dict == null
+                   ? PackNull()
+                   : PackDictionary(dict, null, null);
+    }
+
+    public Packer PackDictionary<TKey, TValue>(IDictionary<TKey, TValue> dict)
+    {
+        return dict == null
+                   ? PackNull()
+                   : PackDictionary((IDictionary) dict, FindPackerCallback(typeof (TKey)),
+                                    FindPackerCallback(typeof (TValue)));
     }
 
     private void PackArray(int n)
@@ -536,13 +549,5 @@ public class Packer
     {
         writer.Write(MsgPack.UInt64Type);
         writer.Write(d);
-    }
-}
-
-class MyBinaryWriter: BinaryWriter
-{
-    public override void Write(long l)
-    {
-        
     }
 }

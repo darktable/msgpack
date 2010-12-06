@@ -517,23 +517,23 @@ namespace MsgPack.Test
             TestValue<ICollection<int>, List<object>>(
                 null,
                 (packer, list) => packer.PackCollection(list),
-                unpacker => unpacker.UnpackObjectList());
+                unpacker => unpacker.UnpackListOfObjects());
             TestValue(
                 new List<int> {1, 2, 3}, 
                 (packer, list) => packer.PackCollection(list),
-                unpacker => unpacker.UnpackObjectList());
+                unpacker => unpacker.UnpackListOfObjects());
             TestValue(
                 Enumerable.Range(1, 65535).ToList(),
                 (packer, list) => packer.PackCollection(list),
-                unpacker => unpacker.UnpackObjectList());
+                unpacker => unpacker.UnpackListOfObjects());
             TestValue(
                 Enumerable.Range(1, 65536).ToList(),
                     (packer, list) => packer.PackCollection(list),
-                    unpacker => unpacker.UnpackObjectList());
+                    unpacker => unpacker.UnpackListOfObjects());
             TestValue(
                 new List<float> {123.45f, float.MaxValue, float.NegativeInfinity, 0.0f, -0.0f},
                 (packer, list) => packer.PackCollection(list),
-                unpacker => unpacker.UnpackObjectList());
+                unpacker => unpacker.UnpackListOfObjects());
             TestValue(
                 new List<DataClass>
                     {new DataClass {Bool = true}, new DataClass {Long = 123}, new DataClass {String = "qwerty"}},
@@ -564,7 +564,7 @@ namespace MsgPack.Test
 
             TestValue(
                 new Dictionary<int, bool> {{1, false}, {int.MaxValue, true}, {4, true}},
-                (packer, dic) => packer.PackDictionary(dic),
+                (packer, dic) => packer.PackDictionary<int, bool>(dic),
                 unpacker => unpacker.UnpackDictionary(), 
                 AssertDictionariesEqual);
 
@@ -574,7 +574,7 @@ namespace MsgPack.Test
                         {"str1", new DataClass {Bool = true, String = "qq"}},
                         {"qwerty", new DataClass {String = "ppp", Long = long.MaxValue}}
                     },
-                (packer, dict) => packer.PackDictionary(dict),
+                (packer, dict) => packer.PackDictionary<string, DataClass>(dict),
                 unpacker =>
                     {
                         int length = unpacker.UnpackMap();

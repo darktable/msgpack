@@ -293,6 +293,14 @@ public class Unpacker
         }
     }
 
+    /// <summary>
+    /// Unpacks the next value from the inputStream. The value can be of primitive type, 
+    /// a collection, a dictionary or a value of type implementing IMessagePackable.
+    /// If it's a collection, the result type will be List&lt;object&gt;.
+    /// If it's a dictionary, the result type will be Dictionary&lt;object, object&gt;.
+    /// Enum and Char are unpacked as int.
+    /// String is unpacked as byte[].
+    /// </summary>
     public object UnpackObject()
     {
         byte b = reader.ReadByte();
@@ -353,6 +361,9 @@ public class Unpacker
         }
     }
 
+    /// <summary>
+    /// Unpacks array length.
+    /// </summary>
     public int UnpackArray()
     {
         int length;
@@ -363,6 +374,9 @@ public class Unpacker
         throw new MessageTypeException();
     }
 
+    /// <summary>
+    /// Unpacks map length (the number of key-value pairs).
+    /// </summary>
     public int UnpackMap()
     {
         int length;
@@ -373,6 +387,9 @@ public class Unpacker
         throw new MessageTypeException();
     }
 
+    /// <summary>
+    /// Unpacks the value of type implementing IMessagePackable.
+    /// </summary>
     public TValue Unpack<TValue>() where TValue : class, IMessagePackable, new()
     {
         if (TryUnpackNull())
@@ -394,7 +411,7 @@ public class Unpacker
         return (T)Enum.ToObject(typeof(T), UnpackInt());
     }
 
-    public List<object> UnpackObjectList()
+    public List<object> UnpackListOfObjects()
     {
         if (TryUnpackNull())
         {
