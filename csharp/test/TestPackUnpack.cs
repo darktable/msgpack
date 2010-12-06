@@ -12,7 +12,7 @@ namespace MsgPack.Test
     public class TestPackUnpack
     {
         [Test, Ignore]
-        public void StressTest()
+        public void StressTestUnpackULong()
         {
             var stream = new MemoryStream();
             var packer = new Packer(stream);
@@ -24,6 +24,22 @@ namespace MsgPack.Test
             {
                 stream.Seek(0, SeekOrigin.Begin);
                 unpacker.UnpackULong();
+            }
+        }
+
+        [Test, Ignore]
+        public void StressTestUnpackObject()
+        {
+            var stream = new MemoryStream();
+            var packer = new Packer(stream);
+            var unpacker = new Unpacker(stream);
+
+            packer.PackULong(ulong.MaxValue);
+
+            for (int i = 0; i < 10000000; i++)
+            {
+                stream.Seek(0, SeekOrigin.Begin);
+                unpacker.UnpackObject();
             }
         }
 

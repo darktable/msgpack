@@ -295,23 +295,23 @@ public class Unpacker
 
     public object UnpackObject()
     {
+        byte b = reader.ReadByte();
+
         int rawLength;
         int arrayLength;
         int mapLength;
-        if (TryUnpackRaw(out rawLength))
+        if (TryUnpackRaw(b, out rawLength))
         {
             return UnpackRawBody(rawLength);
         }
-        if (TryUnpackArray(out arrayLength))
+        if (TryUnpackArray(b, out arrayLength))
         {
             return UnpackObjectListBody(arrayLength);
         }
-        if (TryUnpackMap(out mapLength))
+        if (TryUnpackMap(b, out mapLength))
         {
             return UnpackDictionaryBody(mapLength);
         }
-
-        byte b = reader.ReadByte();
         if (MsgPack.IsPositiveFixnum(b))
         {
             return b;
@@ -356,7 +356,7 @@ public class Unpacker
     public int UnpackArray()
     {
         int length;
-        if (TryUnpackArray(out length))
+        if (TryUnpackArray(reader.ReadByte(), out length))
         {
             return length;
         }
@@ -366,7 +366,7 @@ public class Unpacker
     public int UnpackMap()
     {
         int length;
-        if (TryUnpackMap(out length))
+        if (TryUnpackMap(reader.ReadByte(), out length))
         {
             return length;
         }
@@ -442,21 +442,20 @@ public class Unpacker
     private int UnpackRaw()
     {
         int length;
-        if (TryUnpackRaw(out length))
+        if (TryUnpackRaw(reader.ReadByte(), out length))
         {
             return length;
         }
         throw new MessageTypeException();
     }
 
-    private bool TryUnpackRaw(out int length)
+    private bool TryUnpackRaw(byte firstByte, out int length)
     {
-        byte b = reader.ReadByte();
-        if (MsgPack.IsFixRawType(b))
+        if (MsgPack.IsFixRawType(firstByte))
         {
-            length = MsgPack.UnpackFixRawLength(b);
+            length = MsgPack.UnpackFixRawLength(firstByte);
         }
-        else switch (b)
+        else switch (firstByte)
         {
             case MsgPack.Raw16Type:
                 length = reader.ReadUInt16();
@@ -470,7 +469,6 @@ public class Unpacker
                 length = (int)v;
                 break;
             default:
-                GotoBack();
                 length = 0;
                 return false;
         }
@@ -487,14 +485,13 @@ public class Unpacker
         return bytes;
     }
 
-    private bool TryUnpackArray(out int length)
+    private bool TryUnpackArray(byte firstByte, out int length)
     {
-        byte b = reader.ReadByte();
-        if (MsgPack.IsFixArrayType(b))
+        if (MsgPack.IsFixArrayType(firstByte))
         {
-            length = MsgPack.UnpackFixArrayLength(b);
+            length = MsgPack.UnpackFixArrayLength(firstByte);
         }
-        else switch (b)
+        else switch (firstByte)
         {
             case MsgPack.Array16Type:
                 length = reader.ReadUInt16();
@@ -508,21 +505,19 @@ public class Unpacker
                 length = (int)v;
                 break;
             default:
-                GotoBack();
                 length = 0;
                 return false;
         }
         return true;
     }
 
-    private bool TryUnpackMap(out int length)
+    private bool TryUnpackMap(byte firstByte, out int length)
     {
-        byte b = reader.ReadByte();
-        if (MsgPack.IsFixMapType(b))
+        if (MsgPack.IsFixMapType(firstByte))
         {
-            length = MsgPack.UnpackFixMapLength(b);
+            length = MsgPack.UnpackFixMapLength(firstByte);
         }
-        else switch (b)
+        else switch (firstByte)
         {
             case MsgPack.Map16Type:
                 length = reader.ReadUInt16();
@@ -536,7 +531,6 @@ public class Unpacker
                 length = (int)v;
                 break;
             default:
-                GotoBack();
                 length = 0;
                 return false;
         }
