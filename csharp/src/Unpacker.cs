@@ -310,7 +310,11 @@ public class Unpacker
         int mapLength;
         if (TryUnpackRaw(b, out rawLength))
         {
-            return UnpackRawBody(rawLength);
+			// FIXME: This will choke if the byte array can't be converted to a UTF8 string
+			// but how often are sending a string vs. byte array?
+			var bytes = UnpackRawBody(rawLength);
+
+			return System.Text.Encoding.UTF8.GetString(bytes);
         }
         if (TryUnpackArray(b, out arrayLength))
         {

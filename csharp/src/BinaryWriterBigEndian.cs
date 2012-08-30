@@ -57,9 +57,9 @@ internal class BinaryWriterBigEndian : IDisposable
         stream.Write(buf, 0, buf.Length);
     }
         
-    public unsafe void Write(double value)
+    public void Write(double value)
     {
-        ulong num = *((ulong*)&value);
+		ulong num = (ulong) BitConverter.DoubleToInt64Bits(value);
         buffer[7] = (byte)num;
         buffer[6] = (byte)(num >> 8);
         buffer[5] = (byte)(num >> 16);
@@ -105,9 +105,11 @@ internal class BinaryWriterBigEndian : IDisposable
         stream.WriteByte((byte)value);
     }
 
-    public unsafe void Write(float value)
+    public void Write(float value)
     {
-        uint num = *((uint*)&value);
+		byte[] bytes = BitConverter.GetBytes(value);
+		uint num = BitConverter.ToUInt32(bytes, 0);
+
         buffer[3] = (byte)num;
         buffer[2] = (byte)(num >> 8);
         buffer[1] = (byte)(num >> 16);

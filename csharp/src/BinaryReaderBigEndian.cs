@@ -140,17 +140,20 @@ internal class BinaryReaderBigEndian: IDisposable
         return buf;
     }
 
-    public unsafe float ReadSingle()
+    public float ReadSingle()
     {
-        uint num = ReadUInt32();
-        return *(((float*) &num));
+		uint num = ReadUInt32();        
+		var bytes = BitConverter.GetBytes(num);
+
+		return BitConverter.ToSingle(bytes, 0);
     }
 
-    public unsafe double ReadDouble()
+    public double ReadDouble()
     {
         ulong num = ReadUInt64();
-        return *(((double*) &num));
-    }
+
+		return BitConverter.Int64BitsToDouble((long) num);
+    }	
 
     public short ReadInt16()
     {

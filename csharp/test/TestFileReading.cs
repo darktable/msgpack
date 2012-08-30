@@ -11,7 +11,7 @@ namespace MsgPack.Test
         [Test]
         public void TestReadFromFile()
         {
-            using (var stream = new FileStream(@"TestFiles\test.mpac", FileMode.Open))
+            using (var stream = new FileStream(Path.Combine("TestFiles","test.mpac"), FileMode.Open))
             {
                 var unpacker = new Unpacker(stream);
 
