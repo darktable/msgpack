@@ -1,4 +1,5 @@
-﻿internal static class MsgPack
+﻿namespace MsgPack {
+internal static class MsgPack
 {
     public const byte BoolFalseType = 0xc2;
     public const byte BoolTrueType = 0xc3;
@@ -88,4 +89,5 @@
     {
         return b & 0x0f;
     }
+}
 }

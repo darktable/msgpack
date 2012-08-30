@@ -1,5 +1,6 @@
 ﻿using System;
 
+namespace MsgPack {
 public class MessagePackException : Exception
 {
     public MessagePackException()
@@ -20,4 +21,5 @@ public class MessagePackException : Exception
         : base(message, innerException)
     {
     }
+}
 }

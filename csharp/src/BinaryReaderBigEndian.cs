@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 
+namespace MsgPack {
 internal class BinaryReaderBigEndian: IDisposable
 {
     private byte[] buffer;
@@ -215,4 +216,5 @@ internal class BinaryReaderBigEndian: IDisposable
     {
         throw new EndOfStreamException();
     }
+}
 }

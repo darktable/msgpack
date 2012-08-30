@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
+namespace MsgPack {
 public class Unpacker
 {
     private readonly BinaryReaderBigEndian reader;
@@ -582,4 +583,5 @@ public class Unpacker
     {
         reader.BaseStream.Seek(-1, SeekOrigin.Current);
     }
+}
 }

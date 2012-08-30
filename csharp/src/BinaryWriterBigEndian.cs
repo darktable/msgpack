@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 
+namespace MsgPack {
 internal class BinaryWriterBigEndian : IDisposable
 {
     private readonly byte[] buffer;
@@ -150,4 +151,5 @@ internal class BinaryWriterBigEndian : IDisposable
     {
         stream.Write(buf, index, count);
     }
+}
 }

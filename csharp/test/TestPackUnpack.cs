@@ -677,5 +677,10 @@ namespace MsgPack.Test
             var other = (DataClass) obj;
             return other.Bool.Equals(Bool) && Equals(other.String, String) && other.Int == Int && other.Long == Long && other.Double.Equals(Double);
         }
+
+		public override int GetHashCode()
+		{
+			return (Bool.GetHashCode() * String.GetHashCode()) + (Int.GetHashCode() * Long.GetHashCode()) - Double.GetHashCode();
+		}
     }
 }

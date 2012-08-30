@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
+namespace MsgPack {
 public class Packer
 {
     private readonly BinaryWriterBigEndian writer;
@@ -550,4 +551,5 @@ public class Packer
         writer.Write(MsgPack.UInt64Type);
         writer.Write(d);
     }
+}
 }
